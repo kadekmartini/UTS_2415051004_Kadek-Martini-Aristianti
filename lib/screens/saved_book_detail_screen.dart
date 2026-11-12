@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -9,14 +10,20 @@ import 'add_edit_book_screen.dart';
 class SavedBookDetailScreen extends StatefulWidget {
   final ReadingItem book;
 
-  const SavedBookDetailScreen({super.key, required this.book});
+  const SavedBookDetailScreen({
+    super.key,
+    required this.book,
+  });
 
   @override
-  State<SavedBookDetailScreen> createState() => _SavedBookDetailScreenState();
+  State<SavedBookDetailScreen> createState() =>
+      _SavedBookDetailScreenState();
 }
 
-class _SavedBookDetailScreenState extends State<SavedBookDetailScreen> {
+class _SavedBookDetailScreenState
+    extends State<SavedBookDetailScreen> {
   late ReadingItem _currentBook;
+  bool _isDeleting = false;
 
   @override
   void initState() {
@@ -24,24 +31,24 @@ class _SavedBookDetailScreenState extends State<SavedBookDetailScreen> {
     _currentBook = widget.book;
   }
 
+  // EDIT: membuka halaman untuk mengubah data buku.
   Future<void> _editBook() async {
     final result = await Navigator.push<bool>(
       context,
       MaterialPageRoute<bool>(
-        builder: (context) => AddEditBookScreen(readingItem: _currentBook),
+        builder: (context) =>
+            AddEditBookScreen(readingItem: _currentBook),
       ),
     );
 
     if (!mounted || result != true) return;
 
-    // Ambil kembali data terbaru dari Supabase.
     final provider = context.read<ReadingProvider>();
 
     await provider.loadItems();
 
     if (!mounted) return;
 
-    // Cari buku yang sudah diperbarui.
     final updatedBooks = provider.items.where(
       (item) => item.id == _currentBook.id,
     );
@@ -53,7 +60,92 @@ class _SavedBookDetailScreenState extends State<SavedBookDetailScreen> {
     } else if (provider.error != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Gagal memperbarui tampilan: ${provider.error}'),
+          content: Text(
+            'Gagal memperbarui tampilan: ${provider.error}',
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  // DELETE: menampilkan dialog konfirmasi sebelum menghapus buku.
+  Future<void> _deleteBook() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text(
+            'Hapus Buku?',
+            style: TextStyle(
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          content: Text(
+            'Apakah kamu yakin ingin menghapus '
+            '"${_currentBook.title}" dari Rak Saya? '
+            'Data buku yang dihapus tidak dapat dikembalikan.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(dialogContext, false);
+              },
+              child: const Text('Batal'),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.pop(dialogContext, true);
+              },
+              style: FilledButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Hapus'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (!mounted || confirmed != true) return;
+
+    setState(() {
+      _isDeleting = true;
+    });
+
+    final provider = context.read<ReadingProvider>();
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+
+    try {
+      await provider.deleteItem(_currentBook.id);
+
+      if (!mounted) return;
+
+      setState(() {
+        _isDeleting = false;
+      });
+
+      // Kembali ke Rak Saya setelah penghapusan berhasil.
+      navigator.pop();
+
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Buku berhasil dihapus dari Rak Saya.'),
+          backgroundColor: AppColors.forest,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        _isDeleting = false;
+      });
+
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('Gagal menghapus buku: $e'),
           backgroundColor: Colors.red,
         ),
       );
@@ -92,7 +184,10 @@ class _SavedBookDetailScreenState extends State<SavedBookDetailScreen> {
     );
   }
 
-  Widget _buildInfo({required String label, required String value}) {
+  Widget _buildInfo({
+    required String label,
+    required String value,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: Row(
@@ -102,7 +197,10 @@ class _SavedBookDetailScreenState extends State<SavedBookDetailScreen> {
             width: 145,
             child: Text(
               label,
-              style: const TextStyle(color: AppColors.muted, fontSize: 13),
+              style: const TextStyle(
+                color: AppColors.muted,
+                fontSize: 13,
+              ),
             ),
           ),
           Expanded(
@@ -129,7 +227,9 @@ class _SavedBookDetailScreenState extends State<SavedBookDetailScreen> {
       appBar: AppBar(
         title: const Text(
           'Detail Buku Tersimpan',
-          style: TextStyle(fontWeight: FontWeight.w800),
+          style: TextStyle(
+            fontWeight: FontWeight.w800,
+          ),
         ),
       ),
       body: SafeArea(
@@ -147,17 +247,21 @@ class _SavedBookDetailScreenState extends State<SavedBookDetailScreen> {
                 const SizedBox(height: 8),
                 Text(
                   book.author,
-                  style: const TextStyle(color: AppColors.muted, fontSize: 14),
+                  style: const TextStyle(
+                    color: AppColors.muted,
+                    fontSize: 14,
+                  ),
                 ),
                 const SizedBox(height: 20),
-
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: AppColors.white,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.line),
+                    border: Border.all(
+                      color: AppColors.line,
+                    ),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -178,7 +282,8 @@ class _SavedBookDetailScreenState extends State<SavedBookDetailScreen> {
                       const Divider(color: AppColors.line),
                       _buildInfo(
                         label: 'Tahun terbit',
-                        value: book.publishYear?.toString() ?? 'Tidak tersedia',
+                        value: book.publishYear?.toString() ??
+                            'Tidak tersedia',
                       ),
                       const Divider(color: AppColors.line),
                       _buildInfo(
@@ -204,10 +309,13 @@ class _SavedBookDetailScreenState extends State<SavedBookDetailScreen> {
               padding: const EdgeInsets.all(20),
               child: Center(
                 child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 1000),
+                  constraints: const BoxConstraints(
+                    maxWidth: 1000,
+                  ),
                   child: isWide
                       ? Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                          crossAxisAlignment:
+                              CrossAxisAlignment.start,
                           children: [
                             _buildCover(),
                             const SizedBox(width: 28),
@@ -215,7 +323,8 @@ class _SavedBookDetailScreenState extends State<SavedBookDetailScreen> {
                           ],
                         )
                       : Column(
-                          crossAxisAlignment: CrossAxisAlignment.center,
+                          crossAxisAlignment:
+                              CrossAxisAlignment.center,
                           children: [
                             _buildCover(),
                             const SizedBox(height: 24),
@@ -231,23 +340,63 @@ class _SavedBookDetailScreenState extends State<SavedBookDetailScreen> {
       bottomNavigationBar: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 10, 20, 16),
-          child: SizedBox(
-            height: 52,
-            child: FilledButton.icon(
-              onPressed: _editBook,
-              icon: const Icon(Icons.edit_rounded),
-              label: const Text(
-                'Edit Buku',
-                style: TextStyle(fontWeight: FontWeight.w700),
-              ),
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.forest,
-                foregroundColor: AppColors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: FilledButton.icon(
+                  onPressed: _isDeleting ? null : _editBook,
+                  icon: const Icon(Icons.edit_rounded),
+                  label: const Text(
+                    'Edit Buku',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.forest,
+                    foregroundColor: AppColors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                  ),
                 ),
               ),
-            ),
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: OutlinedButton.icon(
+                  onPressed: _isDeleting ? null : _deleteBook,
+                  icon: _isDeleting
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Icon(Icons.delete_outline_rounded),
+                  label: Text(
+                    _isDeleting ? 'Menghapus...' : 'Hapus Buku',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.red,
+                    side: const BorderSide(
+                      color: Colors.red,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),

@@ -1,3 +1,4 @@
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/reading_item.dart';
@@ -5,11 +6,12 @@ import '../models/reading_item.dart';
 class ReadingRepository {
   final SupabaseClient? _providedClient;
 
-  ReadingRepository({SupabaseClient? client}) : _providedClient = client;
+  ReadingRepository({SupabaseClient? client})
+      : _providedClient = client;
 
-  SupabaseClient get _client => _providedClient ?? Supabase.instance.client;
+  SupabaseClient get _client =>
+      _providedClient ?? Supabase.instance.client;
 
-  // READ: mengambil koleksi buku dari Supabase.
   Future<List<ReadingItem>> getItems() async {
     final user = _client.auth.currentUser;
 
@@ -28,7 +30,6 @@ class ReadingRepository {
         .toList();
   }
 
-  // CREATE: menyimpan buku baru ke Supabase.
   Future<ReadingItem> createItem({
     required String openLibraryKey,
     required String title,
@@ -64,7 +65,6 @@ class ReadingRepository {
     return ReadingItem.fromMap(Map<String, dynamic>.from(response));
   }
 
-  // UPDATE: mengubah data buku yang sudah tersimpan.
   Future<ReadingItem> updateItem(ReadingItem item) async {
     final user = _client.auth.currentUser;
 
@@ -90,5 +90,19 @@ class ReadingRepository {
         .single();
 
     return ReadingItem.fromMap(Map<String, dynamic>.from(response));
+  }
+
+  Future<void> deleteItem(String id) async {
+    final user = _client.auth.currentUser;
+
+    if (user == null) {
+      throw StateError('Pengguna belum login. Silakan masuk kembali.');
+    }
+
+    await _client
+        .from('reading_items')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', user.id);
   }
 }

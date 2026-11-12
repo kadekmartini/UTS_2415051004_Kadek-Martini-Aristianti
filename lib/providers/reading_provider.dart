@@ -1,3 +1,4 @@
+
 import 'package:flutter/foundation.dart';
 
 import '../models/reading_item.dart';
@@ -7,7 +8,7 @@ class ReadingProvider extends ChangeNotifier {
   final ReadingRepository _repository;
 
   ReadingProvider({ReadingRepository? repository})
-    : _repository = repository ?? ReadingRepository();
+      : _repository = repository ?? ReadingRepository();
 
   List<ReadingItem> _items = [];
   bool _isLoading = false;
@@ -119,6 +120,25 @@ class ReadingProvider extends ChangeNotifier {
       }
 
       return updatedItem;
+    } catch (e) {
+      _error = e.toString();
+      rethrow;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // DELETE: menghapus buku dari Supabase dan memperbarui daftar lokal.
+  Future<void> deleteItem(String id) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      await _repository.deleteItem(id);
+
+      _items.removeWhere((item) => item.id == id);
     } catch (e) {
       _error = e.toString();
       rethrow;
