@@ -1,8 +1,14 @@
-
 import 'package:flutter/foundation.dart';
+
 import '../models/reading_item.dart';
+import '../repositories/reading_repository.dart';
 
 class ReadingProvider extends ChangeNotifier {
+  final ReadingRepository _repository;
+
+  ReadingProvider({ReadingRepository? repository})
+    : _repository = repository ?? ReadingRepository();
+
   List<ReadingItem> _items = [];
   bool _isLoading = false;
   String? _error;
@@ -37,60 +43,24 @@ class ReadingProvider extends ChangeNotifier {
   int get finishedCount =>
       _items.where((item) => item.status == 'finished').length;
 
-  void setItems(List<ReadingItem> items) {
-    _items = List<ReadingItem>.from(items);
-    _isLoading = false;
+  Future<void> loadItems() async {
+    _isLoading = true;
     _error = null;
     notifyListeners();
-  }
 
-  void addItem(ReadingItem item) {
-    _items.insert(0, item);
-    notifyListeners();
-  }
-
-  bool updateItem(ReadingItem updatedItem) {
-    final index = _items.indexWhere(
-      (item) => item.id == updatedItem.id,
-    );
-
-    if (index == -1) {
-      return false;
+    try {
+      _items = await _repository.getItems();
+    } catch (e) {
+      _error = e.toString();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
-
-    _items[index] = updatedItem;
-    notifyListeners();
-    return true;
   }
 
-  bool deleteItem(ReadingItem targetItem) {
-    final initialLength = _items.length;
-
-    _items.removeWhere(
-      (item) => item.id == targetItem.id,
-    );
-
-    if (_items.length == initialLength) {
-      return false;
-    }
-
-    notifyListeners();
-    return true;
-  }
-
-  void setLoading(bool value) {
-    _isLoading = value;
-
-    if (value) {
-      _error = null;
-    }
-
-    notifyListeners();
-  }
-
-  void setError(String? message) {
-    _error = message;
-    _isLoading = false;
+  void setItems(List<ReadingItem> items) {
+    _items = List<ReadingItem>.from(items);
+    _error = null;
     notifyListeners();
   }
 

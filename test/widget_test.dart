@@ -1,9 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:provider/provider.dart';
 
 import 'package:readify/core/app_theme.dart';
+import 'package:readify/providers/catalog_provider.dart';
+import 'package:readify/providers/reading_provider.dart';
 import 'package:readify/screens/home_screen.dart';
 import 'package:readify/screens/main_shell.dart';
+
+Widget buildTestApp({required Widget home}) {
+  return MultiProvider(
+    providers: [
+      ChangeNotifierProvider(create: (context) => CatalogProvider()),
+      ChangeNotifierProvider(create: (context) => ReadingProvider()),
+    ],
+    child: MaterialApp(
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.light,
+      home: home,
+    ),
+  );
+}
 
 void main() {
   group('Readify Responsive Layout', () {
@@ -16,13 +33,7 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
-      await tester.pumpWidget(
-        MaterialApp(
-          debugShowCheckedModeBanner: false,
-          theme: AppTheme.light,
-          home: const HomeScreen(),
-        ),
-      );
+      await tester.pumpWidget(buildTestApp(home: const HomeScreen()));
 
       expect(
         find.byKey(const ValueKey('compact-recommendations')),
@@ -43,13 +54,7 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
-      await tester.pumpWidget(
-        MaterialApp(
-          debugShowCheckedModeBanner: false,
-          theme: AppTheme.light,
-          home: const HomeScreen(),
-        ),
-      );
+      await tester.pumpWidget(buildTestApp(home: const HomeScreen()));
 
       expect(
         find.byKey(const ValueKey('wide-recommendations')),
@@ -75,13 +80,7 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
-      await tester.pumpWidget(
-        MaterialApp(
-          debugShowCheckedModeBanner: false,
-          theme: AppTheme.light,
-          home: const MainShell(),
-        ),
-      );
+      await tester.pumpWidget(buildTestApp(home: const MainShell()));
 
       await tester.pumpAndSettle();
 
@@ -125,13 +124,7 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
-      await tester.pumpWidget(
-        MaterialApp(
-          debugShowCheckedModeBanner: false,
-          theme: AppTheme.light,
-          home: const MainShell(),
-        ),
-      );
+      await tester.pumpWidget(buildTestApp(home: const MainShell()));
 
       await tester.pumpAndSettle();
 

@@ -1,103 +1,512 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../core/app_theme.dart';
+import '../models/reading_item.dart';
+import '../providers/reading_provider.dart';
 
-class LibraryScreen extends StatelessWidget {
+class LibraryScreen extends StatefulWidget {
   const LibraryScreen({super.key});
+
+  @override
+  State<LibraryScreen> createState() => _LibraryScreenState();
+}
+
+class _LibraryScreenState extends State<LibraryScreen> {
+  @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<ReadingProvider>().loadItems();
+      }
+    });
+  }
+
+  Future<void> _refreshBooks() async {
+    await context.read<ReadingProvider>().loadItems();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.cream,
       appBar: AppBar(
         title: const Text(
           'Rak Bacaan Saya',
           style: TextStyle(fontWeight: FontWeight.w800),
         ),
       ),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 480),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  height: 100,
-                  width: 100,
-                  decoration: BoxDecoration(
-                    color: AppColors.mint,
-                    borderRadius: BorderRadius.circular(28),
-                  ),
-                  child: const Icon(
-                    Icons.bookmarks_rounded,
-                    color: AppColors.forest,
-                    size: 48,
-                  ),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Rak Bacaanmu',
+                style: Theme.of(context).textTheme.headlineMedium,
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Semua buku yang kamu simpan akan ditampilkan di sini.',
+                style: TextStyle(
+                  color: AppColors.muted,
+                  fontSize: 13,
+                  height: 1.5,
                 ),
-
-                const SizedBox(height: 22),
-
-                Text(
-                  'Rak Bacaanmu',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.headlineMedium,
-                ),
-
-                const SizedBox(height: 10),
-
-                const Text(
-                  'Semua buku yang kamu simpan akan ditampilkan di halaman ini.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: AppColors.muted,
-                    fontSize: 13,
-                    height: 1.5,
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(18),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: AppColors.line),
-                  ),
-                  child: const Column(
-                    children: [
-                      Icon(
-                        Icons.library_books_rounded,
-                        color: AppColors.leaf,
-                        size: 30,
-                      ),
-
-                      SizedBox(height: 10),
-
-                      Text(
-                        'Koleksi Buku Pribadi',
-                        style: TextStyle(
-                          color: AppColors.ink,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 15,
+              ),
+              const SizedBox(height: 20),
+              Expanded(
+                child: Consumer<ReadingProvider>(
+                  builder: (context, provider, child) {
+                    if (provider.isLoading && provider.items.isEmpty) {
+                      return const Center(
+                        child: CircularProgressIndicator(
+                          color: AppColors.forest,
                         ),
-                      ),
+                      );
+                    }
 
-                      SizedBox(height: 6),
+                    if (provider.error != null && provider.items.isEmpty) {
+                      return _LibraryMessage(
+                        icon: Icons.wifi_off_rounded,
+                        title: 'Gagal Memuat Rak Buku',
+                        message: provider.error!,
+                        buttonText: 'Coba Lagi',
+                        onPressed: _refreshBooks,
+                      );
+                    }
 
-                      Text(
-                        'Koleksi, status membaca, rating, dan catatan akan dikelola melalui database Supabase.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: AppColors.muted, fontSize: 12),
+                    if (provider.items.isEmpty) {
+                      return const _LibraryMessage(
+                        icon: Icons.menu_book_rounded,
+                        title: 'Rak Bukumu Masih Kosong',
+                        message: 'Buku yang kamu simpan nantinya akan muncul di sini.',
+                      );
+                    }
+
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Collection statistics
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: AppColors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: AppColors.line),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.library_books_rounded,
+                                color: AppColors.forest,
+                                size: 30,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Total Koleksi',
+                                      style: TextStyle(
+                                        color: AppColors.muted,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                    Text(
+                                      '${provider.totalBooks} Buku',
+                                      style: const TextStyle(
+                                        color: AppColors.ink,
+                                        fontWeight: FontWeight.w800,
+                                        fontSize: 19,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              IconButton(
+                                onPressed: _refreshBooks,
+                                tooltip: 'Muat ulang',
+                                icon: const Icon(
+                                  Icons.refresh_rounded,
+                                  color: AppColors.forest,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 18),
+
+                        // Reading status filters
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: [
+                              _buildFilter(provider, 'all', 'Semua'),
+                              _buildFilter(
+                                provider,
+                                'want_to_read',
+                                'Ingin Dibaca',
+                              ),
+                              _buildFilter(
+                                provider,
+                                'reading',
+                                'Sedang Dibaca',
+                              ),
+                              _buildFilter(
+                                provider,
+                                'finished',
+                                'Selesai Dibaca',
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 14),
+
+                        if (provider.isLoading)
+                          const LinearProgressIndicator(
+                            color: AppColors.forest,
+                            backgroundColor: AppColors.mint,
+                          ),
+
+                        if (provider.error != null)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: Text(
+                              'Pembaruan data gagal: ${provider.error}',
+                              style: const TextStyle(
+                                color: Colors.red,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+
+                        Expanded(
+                          child: _buildBookCollection(provider.filteredItems),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFilter(ReadingProvider provider, String value, String label) {
+    final selected = provider.statusFilter == value;
+
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: ChoiceChip(
+        label: Text(label),
+        selected: selected,
+        onSelected: (_) {
+          provider.setStatusFilter(value);
+        },
+        selectedColor: AppColors.mint,
+        backgroundColor: AppColors.white,
+        labelStyle: TextStyle(
+          color: selected ? AppColors.forest : AppColors.muted,
+          fontWeight: FontWeight.w600,
+          fontSize: 12,
+        ),
+        side: BorderSide(color: selected ? AppColors.leaf : AppColors.line),
+      ),
+    );
+  }
+
+  Widget _buildBookCollection(List<ReadingItem> books) {
+    if (books.isEmpty) {
+      return const _LibraryMessage(
+        icon: Icons.filter_list_off_rounded,
+        title: 'Tidak Ada Buku',
+        message: 'Belum ada buku dengan status membaca ini.',
+      );
+    }
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isWide = constraints.maxWidth >= 700;
+
+        if (isWide) {
+          return GridView.builder(
+            physics: const AlwaysScrollableScrollPhysics(),
+            itemCount: books.length,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              childAspectRatio: 2.5,
+            ),
+            itemBuilder: (context, index) {
+              return _ReadingBookCard(book: books[index]);
+            },
+          );
+        }
+
+        return ListView.separated(
+          physics: const AlwaysScrollableScrollPhysics(),
+          itemCount: books.length,
+          separatorBuilder: (context, index) => const SizedBox(height: 12),
+          itemBuilder: (context, index) {
+            return _ReadingBookCard(book: books[index]);
+          },
+        );
+      },
+    );
+  }
+}
+
+class _ReadingBookCard extends StatelessWidget {
+  final ReadingItem book;
+
+  const _ReadingBookCard({required this.book});
+
+  Color _statusColor() {
+    if (book.status == 'reading') {
+      return AppColors.orange;
+    }
+
+    if (book.status == 'finished') {
+      return AppColors.leaf;
+    }
+
+    return AppColors.forest;
+  }
+
+  Widget _coverPlaceholder() {
+    return Container(
+      width: 68,
+      height: 96,
+      decoration: BoxDecoration(
+        color: AppColors.mint,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: const Icon(
+        Icons.menu_book_rounded,
+        color: AppColors.forest,
+        size: 30,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final coverUrl = book.coverUrl;
+    final rating = book.rating;
+
+    return Card(
+      color: AppColors.white,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: AppColors.line),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: SizedBox(
+                width: 68,
+                height: 96,
+                child: coverUrl != null && coverUrl.isNotEmpty
+                    ? Image.network(
+                        coverUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return _coverPlaceholder();
+                        },
+                      )
+                    : _coverPlaceholder(),
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    book.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: AppColors.ink,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    book.author.isNotEmpty
+                        ? book.author
+                        : 'Penulis tidak diketahui',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: AppColors.muted,
+                      fontSize: 12,
+                    ),
+                  ),
+                  const SizedBox(height: 7),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 4,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      _StatusLabel(
+                        label: book.statusLabel,
+                        color: _statusColor(),
                       ),
+                      if (book.publishYear != null)
+                        Text(
+                          book.publishYear.toString(),
+                          style: const TextStyle(
+                            color: AppColors.muted,
+                            fontSize: 11,
+                          ),
+                        ),
                     ],
                   ),
-                ),
-              ],
+                  if (rating != null && rating > 0) ...[
+                    const SizedBox(height: 5),
+                    Text(
+                      '★ ${rating.toStringAsFixed(1)} / 5',
+                      style: const TextStyle(
+                        color: AppColors.orange,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                  if (book.notes.isNotEmpty) ...[
+                    const SizedBox(height: 5),
+                    Text(
+                      book.notes,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: AppColors.muted,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
             ),
-          ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _StatusLabel extends StatelessWidget {
+  final String label;
+  final Color color;
+
+  const _StatusLabel({required this.label, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+}
+
+class _LibraryMessage extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String message;
+  final String? buttonText;
+  final Future<void> Function()? onPressed;
+
+  const _LibraryMessage({
+    required this.icon,
+    required this.title,
+    required this.message,
+    this.buttonText,
+    this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 90,
+              height: 90,
+              decoration: BoxDecoration(
+                color: AppColors.mint,
+                borderRadius: BorderRadius.circular(25),
+              ),
+              child: Icon(icon, color: AppColors.forest, size: 42),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: AppColors.ink,
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: AppColors.muted,
+                fontSize: 13,
+                height: 1.5,
+              ),
+            ),
+            if (buttonText != null && onPressed != null) ...[
+              const SizedBox(height: 18),
+              FilledButton.icon(
+                onPressed: () {
+                  onPressed?.call();
+                },
+                icon: const Icon(Icons.refresh_rounded),
+                label: Text(buttonText!),
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.forest,
+                  foregroundColor: AppColors.white,
+                ),
+              ),
+            ],
+          ],
         ),
       ),
     );
