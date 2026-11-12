@@ -50,159 +50,142 @@ class HomeScreen extends StatelessWidget {
           ),
         ],
       ),
+
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // GREETING
-              const Text(
-                'PERSONAL READING SPACE',
-                style: TextStyle(
-                  color: AppColors.leaf,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 1.5,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Halo, pembaca!',
-                style: Theme.of(context).textTheme.headlineLarge,
-              ),
-              const SizedBox(height: 5),
-              Text(
-                'Temukan cerita dan pengetahuan baru hari ini.',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 22),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final bool isWide = constraints.maxWidth >= 800;
 
-              // HERO BANNER
-              const _HeroBanner(),
+            final double horizontalPadding = isWide ? 32 : 20;
 
-              const SizedBox(height: 25),
+            final int gridColumns = constraints.maxWidth >= 1100 ? 4 : 3;
 
-              // STATISTICS
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Ringkasan bacaan',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const Text(
-                    'Contoh data',
-                    style: TextStyle(fontSize: 10, color: AppColors.muted),
-                  ),
-                ],
+            return SingleChildScrollView(
+              padding: EdgeInsets.fromLTRB(
+                horizontalPadding,
+                12,
+                horizontalPadding,
+                28,
               ),
-              const SizedBox(height: 13),
-              const Row(
-                children: [
-                  Expanded(
-                    child: _StatisticCard(
-                      icon: Icons.library_books_rounded,
-                      value: '12',
-                      label: 'Total buku',
-                    ),
-                  ),
-                  SizedBox(width: 9),
-                  Expanded(
-                    child: _StatisticCard(
-                      icon: Icons.menu_book_rounded,
-                      value: '03',
-                      label: 'Dibaca',
-                    ),
-                  ),
-                  SizedBox(width: 9),
-                  Expanded(
-                    child: _StatisticCard(
-                      icon: Icons.check_circle_rounded,
-                      value: '08',
-                      label: 'Selesai',
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 27),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 1180),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // INTRODUCTION
+                      const Text(
+                        'PERSONAL READING SPACE',
+                        style: TextStyle(
+                          color: AppColors.leaf,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1.5,
+                        ),
+                      ),
 
-              // RECOMMENDATIONS
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Rekomendasi buku',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const Text(
-                    'Jelajahi',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.forest,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 5),
-              const Text(
-                'Temukan bacaan untuk menemani harimu.',
-                style: TextStyle(color: AppColors.muted, fontSize: 12),
-              ),
-              const SizedBox(height: 15),
-              SizedBox(
-                height: 235,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  children: const [
-                    _BookCard(
-                      title: 'Atomic Habits',
-                      author: 'James Clear',
-                      tag: 'Self Improvement',
-                      colors: [Color(0xFF325B49), Color(0xFF729278)],
-                      icon: Icons.spa_rounded,
-                    ),
-                    SizedBox(width: 13),
-                    _BookCard(
-                      title: 'Filosofi Teras',
-                      author: 'Henry Manampiring',
-                      tag: 'Filosofi',
-                      colors: [Color(0xFFB56D45), Color(0xFFE8AE77)],
-                      icon: Icons.wb_sunny_rounded,
-                    ),
-                    SizedBox(width: 13),
-                    _BookCard(
-                      title: 'The Psychology of Money',
-                      author: 'Morgan Housel',
-                      tag: 'Keuangan',
-                      colors: [Color(0xFF46516D), Color(0xFF8792B2)],
-                      icon: Icons.account_balance_wallet_rounded,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 26),
+                      const SizedBox(height: 8),
 
-              // READING TARGET
-              const _ReadingTarget(),
+                      Text(
+                        'Halo, pembaca!',
+                        style: Theme.of(context).textTheme.headlineLarge,
+                      ),
 
-              const SizedBox(height: 22),
+                      const SizedBox(height: 5),
 
-              // FOOTER
-              const Center(
-                child: Text(
-                  'READ MORE. GROW MORE.',
-                  style: TextStyle(
-                    color: AppColors.leaf,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 10,
-                    letterSpacing: 1.5,
+                      Text(
+                        'Temukan cerita dan pengetahuan baru hari ini.',
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+
+                      const SizedBox(height: 22),
+
+                      // RESPONSIVE HERO AND STATISTICS
+                      if (isWide) ...[
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Expanded(flex: 3, child: _HeroBanner()),
+                            const SizedBox(width: 20),
+                            const Expanded(
+                              flex: 2,
+                              child: _StatisticsSection(),
+                            ),
+                          ],
+                        ),
+                      ] else ...[
+                        const _HeroBanner(),
+                        const SizedBox(height: 25),
+                        const _StatisticsSection(),
+                      ],
+
+                      const SizedBox(height: 27),
+
+                      // RECOMMENDATION TITLE
+                      // FIX: Expanded mencegah overflow.
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Rekomendasi buku',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
+                          ),
+
+                          const SizedBox(width: 8),
+
+                          const Text(
+                            'Jelajahi',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.forest,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 5),
+
+                      const Text(
+                        'Temukan bacaan untuk menemani harimu.',
+                        style: TextStyle(color: AppColors.muted, fontSize: 12),
+                      ),
+
+                      const SizedBox(height: 15),
+
+                      // COMPACT: HORIZONTAL LIST
+                      // WIDE: RESPONSIVE GRID
+                      if (isWide)
+                        _WideRecommendationGrid(columns: gridColumns)
+                      else
+                        const _CompactRecommendationList(),
+
+                      const SizedBox(height: 26),
+
+                      const _ReadingTarget(),
+
+                      const SizedBox(height: 22),
+
+                      const Center(
+                        child: Text(
+                          'READ MORE. GROW MORE.',
+                          style: TextStyle(
+                            color: AppColors.leaf,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 10,
+                            letterSpacing: 1.5,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );
@@ -254,7 +237,9 @@ class _HeroBanner extends StatelessWidget {
                     ),
                   ),
                 ),
+
                 const SizedBox(height: 15),
+
                 const Text(
                   'Satu halaman,\nbanyak dunia.',
                   style: TextStyle(
@@ -264,7 +249,9 @@ class _HeroBanner extends StatelessWidget {
                     height: 1.15,
                   ),
                 ),
+
                 const SizedBox(height: 9),
+
                 Text(
                   'Mulai perjalanan membaca dan kumpulkan buku favoritmu.',
                   style: TextStyle(
@@ -276,7 +263,9 @@ class _HeroBanner extends StatelessWidget {
               ],
             ),
           ),
+
           const SizedBox(width: 8),
+
           const Icon(
             Icons.auto_stories_rounded,
             color: Color(0xAAFFFFFF),
@@ -284,6 +273,61 @@ class _HeroBanner extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+// ======================================
+// STATISTICS SECTION
+// ======================================
+
+class _StatisticsSection extends StatelessWidget {
+  const _StatisticsSection();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Ringkasan bacaan', style: Theme.of(context).textTheme.titleLarge),
+
+        const SizedBox(height: 5),
+
+        const Text(
+          'Contoh data koleksi',
+          style: TextStyle(fontSize: 10, color: AppColors.muted),
+        ),
+
+        const SizedBox(height: 13),
+
+        const Row(
+          children: [
+            Expanded(
+              child: _StatisticCard(
+                icon: Icons.library_books_rounded,
+                value: '12',
+                label: 'Total buku',
+              ),
+            ),
+            SizedBox(width: 9),
+            Expanded(
+              child: _StatisticCard(
+                icon: Icons.menu_book_rounded,
+                value: '03',
+                label: 'Dibaca',
+              ),
+            ),
+            SizedBox(width: 9),
+            Expanded(
+              child: _StatisticCard(
+                icon: Icons.check_circle_rounded,
+                value: '08',
+                label: 'Selesai',
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }
@@ -328,7 +372,7 @@ class _StatisticCard extends StatelessWidget {
           const SizedBox(height: 3),
           Text(
             label,
-            maxLines: 1,
+            maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(color: AppColors.muted, fontSize: 10),
           ),
@@ -339,11 +383,68 @@ class _StatisticCard extends StatelessWidget {
 }
 
 // ======================================
-// BOOK CARD
+// COMPACT RECOMMENDATION LIST
 // ======================================
 
-class _BookCard extends StatelessWidget {
-  const _BookCard({
+class _CompactRecommendationList extends StatelessWidget {
+  const _CompactRecommendationList();
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 235,
+      child: ListView.separated(
+        key: const ValueKey('compact-recommendations'),
+        scrollDirection: Axis.horizontal,
+        itemCount: _sampleBooks.length,
+
+        separatorBuilder: (BuildContext context, int index) {
+          return const SizedBox(width: 13);
+        },
+
+        itemBuilder: (context, index) {
+          return _BookCard(book: _sampleBooks[index], width: 145);
+        },
+      ),
+    );
+  }
+}
+
+// ======================================
+// WIDE RESPONSIVE RECOMMENDATION GRID
+// ======================================
+
+class _WideRecommendationGrid extends StatelessWidget {
+  const _WideRecommendationGrid({required this.columns});
+
+  final int columns;
+
+  @override
+  Widget build(BuildContext context) {
+    return GridView.builder(
+      key: const ValueKey('wide-recommendations'),
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: columns,
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
+        childAspectRatio: 0.82,
+      ),
+      itemCount: _sampleBooks.length,
+      itemBuilder: (context, index) {
+        return _BookCard(book: _sampleBooks[index], width: double.infinity);
+      },
+    );
+  }
+}
+
+// ======================================
+// BOOK DATA
+// ======================================
+
+class _BookData {
+  const _BookData({
     required this.title,
     required this.author,
     required this.tag,
@@ -356,11 +457,53 @@ class _BookCard extends StatelessWidget {
   final String tag;
   final List<Color> colors;
   final IconData icon;
+}
+
+const List<_BookData> _sampleBooks = [
+  _BookData(
+    title: 'Atomic Habits',
+    author: 'James Clear',
+    tag: 'Self Improvement',
+    colors: [Color(0xFF325B49), Color(0xFF729278)],
+    icon: Icons.spa_rounded,
+  ),
+  _BookData(
+    title: 'Filosofi Teras',
+    author: 'Henry Manampiring',
+    tag: 'Filosofi',
+    colors: [Color(0xFFB56D45), Color(0xFFE8AE77)],
+    icon: Icons.wb_sunny_rounded,
+  ),
+  _BookData(
+    title: 'The Psychology of Money',
+    author: 'Morgan Housel',
+    tag: 'Keuangan',
+    colors: [Color(0xFF46516D), Color(0xFF8792B2)],
+    icon: Icons.account_balance_wallet_rounded,
+  ),
+  _BookData(
+    title: 'Deep Work',
+    author: 'Cal Newport',
+    tag: 'Produktivitas',
+    colors: [Color(0xFF69513F), Color(0xFFB18C6B)],
+    icon: Icons.psychology_rounded,
+  ),
+];
+
+// ======================================
+// BOOK CARD
+// ======================================
+
+class _BookCard extends StatelessWidget {
+  const _BookCard({required this.book, required this.width});
+
+  final _BookData book;
+  final double width;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 145,
+      width: width,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -370,7 +513,7 @@ class _BookCard extends StatelessWidget {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(15),
                 gradient: LinearGradient(
-                  colors: colors,
+                  colors: book.colors,
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -378,13 +521,15 @@ class _BookCard extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(icon, color: Colors.white, size: 40),
+                  Icon(book.icon, color: Colors.white, size: 40),
                   const SizedBox(height: 12),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     child: Text(
-                      title.toUpperCase(),
+                      book.title.toUpperCase(),
                       textAlign: TextAlign.center,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 13,
@@ -399,7 +544,7 @@ class _BookCard extends StatelessWidget {
           ),
           const SizedBox(height: 9),
           Text(
-            title,
+            book.title,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
@@ -410,14 +555,16 @@ class _BookCard extends StatelessWidget {
           ),
           const SizedBox(height: 3),
           Text(
-            author,
+            book.author,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(fontSize: 11, color: AppColors.muted),
           ),
           const SizedBox(height: 4),
           Text(
-            tag,
+            book.tag,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: const TextStyle(
               fontSize: 9,
               color: AppColors.leaf,

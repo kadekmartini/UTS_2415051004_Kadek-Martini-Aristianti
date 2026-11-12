@@ -5,25 +5,58 @@ import 'package:readify/core/app_theme.dart';
 import 'package:readify/screens/home_screen.dart';
 
 void main() {
-  testWidgets('Readify home screen displays correctly', (
-    WidgetTester tester,
-  ) async {
-    await tester.pumpWidget(
-      MaterialApp(
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.light,
-        home: const HomeScreen(),
-      ),
-    );
+  group('Readify Responsive Layout', () {
+    testWidgets('Compact layout menampilkan rekomendasi horizontal', (
+      WidgetTester tester,
+    ) async {
+      tester.view.physicalSize = const Size(440, 956);
+      tester.view.devicePixelRatio = 1;
 
-    expect(find.text('readify'), findsOneWidget);
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
 
-    expect(find.text('Halo, pembaca!'), findsOneWidget);
+      await tester.pumpWidget(
+        MaterialApp(
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.light,
+          home: const HomeScreen(),
+        ),
+      );
 
-    expect(find.text('Ringkasan bacaan'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('compact-recommendations')),
+        findsOneWidget,
+      );
 
-    expect(find.text('Rekomendasi buku'), findsOneWidget);
+      expect(find.byKey(const ValueKey('wide-recommendations')), findsNothing);
+    });
 
-    expect(find.text('Target membaca'), findsOneWidget);
+    testWidgets('Wide layout menampilkan rekomendasi berbentuk grid', (
+      WidgetTester tester,
+    ) async {
+      tester.view.physicalSize = const Size(1100, 900);
+      tester.view.devicePixelRatio = 1;
+
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.light,
+          home: const HomeScreen(),
+        ),
+      );
+
+      expect(
+        find.byKey(const ValueKey('wide-recommendations')),
+        findsOneWidget,
+      );
+
+      expect(
+        find.byKey(const ValueKey('compact-recommendations')),
+        findsNothing,
+      );
+    });
   });
 }
