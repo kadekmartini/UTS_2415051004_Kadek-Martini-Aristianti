@@ -4,12 +4,15 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../core/app_theme.dart';
 import '../models/book.dart';
+import '../models/reading_item.dart';
 import '../providers/reading_provider.dart';
 
 class AddEditBookScreen extends StatefulWidget {
-  final Book book;
+  final Book? book;
+  final ReadingItem? readingItem;
 
-  const AddEditBookScreen({super.key, required this.book});
+  const AddEditBookScreen({super.key, this.book, this.readingItem})
+    : assert((book == null) != (readingItem == null));
 
   @override
   State<AddEditBookScreen> createState() => _AddEditBookScreenState();
@@ -19,9 +22,32 @@ class _AddEditBookScreenState extends State<AddEditBookScreen> {
   final _formKey = GlobalKey<FormState>();
   final _notesController = TextEditingController();
 
-  String _status = 'want_to_read';
+  late String _status;
   double? _rating;
   bool _isSaving = false;
+
+  bool get _isEditing => widget.readingItem != null;
+
+  String get _title => widget.book?.title ?? widget.readingItem!.title;
+
+  String get _author => widget.book?.authorLabel ?? widget.readingItem!.author;
+
+  String? get _coverUrl =>
+      widget.book?.coverUrl ?? widget.readingItem!.coverUrl;
+
+  int? get _publishYear =>
+      widget.book?.firstPublishYear ?? widget.readingItem!.publishYear;
+
+  @override
+  void initState() {
+    super.initState();
+
+    final item = widget.readingItem;
+
+    _status = item?.status ?? 'want_to_read';
+    _rating = item?.rating;
+    _notesController.text = item?.notes ?? '';
+  }
 
   Future<void> _saveBook() async {
     FocusScope.of(context).unfocus();
@@ -35,22 +61,51 @@ class _AddEditBookScreenState extends State<AddEditBookScreen> {
     });
 
     try {
-      await context.read<ReadingProvider>().createItem(
-        openLibraryKey: widget.book.workKey,
-        title: widget.book.title,
-        author: widget.book.authorLabel,
-        coverUrl: widget.book.coverUrl,
-        publishYear: widget.book.firstPublishYear,
-        status: _status,
-        rating: _rating,
-        notes: _notesController.text.trim(),
-      );
+      final provider = context.read<ReadingProvider>();
+
+      if (_isEditing) {
+        final existingItem = widget.readingItem!;
+
+        final updatedItem = ReadingItem(
+          id: existingItem.id,
+          userId: existingItem.userId,
+          openLibraryKey: existingItem.openLibraryKey,
+          title: existingItem.title,
+          author: existingItem.author,
+          coverUrl: existingItem.coverUrl,
+          publishYear: existingItem.publishYear,
+          status: _status,
+          rating: _rating,
+          notes: _notesController.text.trim(),
+          createdAt: existingItem.createdAt,
+          updatedAt: existingItem.updatedAt,
+        );
+
+        await provider.updateItem(updatedItem);
+      } else {
+        final selectedBook = widget.book!;
+
+        await provider.createItem(
+          openLibraryKey: selectedBook.workKey,
+          title: selectedBook.title,
+          author: selectedBook.authorLabel,
+          coverUrl: selectedBook.coverUrl,
+          publishYear: selectedBook.firstPublishYear,
+          status: _status,
+          rating: _rating,
+          notes: _notesController.text.trim(),
+        );
+      }
 
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Buku berhasil ditambahkan ke Rak Saya!'),
+        SnackBar(
+          content: Text(
+            _isEditing
+                ? 'Buku berhasil diperbarui!'
+                : 'Buku berhasil ditambahkan ke Rak Saya!',
+          ),
           backgroundColor: AppColors.forest,
         ),
       );
@@ -64,17 +119,18 @@ class _AddEditBookScreenState extends State<AddEditBookScreen> {
           : 'Gagal menyimpan buku: ${e.message}';
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message),
-          backgroundColor: e.code == '23505' ? AppColors.orange : Colors.red,
-        ),
+        SnackBar(content: Text(message), backgroundColor: AppColors.orange),
       );
     } catch (e) {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Gagal menyimpan buku: $e'),
+          content: Text(
+            _isEditing
+                ? 'Gagal memperbarui buku: $e'
+                : 'Gagal menyimpan buku: $e',
+          ),
           backgroundColor: Colors.red,
         ),
       );
@@ -94,7 +150,7 @@ class _AddEditBookScreenState extends State<AddEditBookScreen> {
   }
 
   Widget _buildBookCover() {
-    final coverUrl = widget.book.coverUrl;
+    final coverUrl = _coverUrl;
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(12),
@@ -106,6 +162,10 @@ class _AddEditBookScreenState extends State<AddEditBookScreen> {
                 coverUrl,
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) {
+                  return _coverPlaceholder();
+                },
+                loadingBuilder: (context, child, progress) {
+                  if (progress == null) return child;
                   return _coverPlaceholder();
                 },
               )
@@ -130,9 +190,9 @@ class _AddEditBookScreenState extends State<AddEditBookScreen> {
     return Scaffold(
       backgroundColor: AppColors.cream,
       appBar: AppBar(
-        title: const Text(
-          'Tambah ke Rak Saya',
-          style: TextStyle(fontWeight: FontWeight.w800),
+        title: Text(
+          _isEditing ? 'Edit Buku' : 'Tambah ke Rak Saya',
+          style: const TextStyle(fontWeight: FontWeight.w800),
         ),
       ),
       body: SafeArea(
@@ -144,7 +204,7 @@ class _AddEditBookScreenState extends State<AddEditBookScreen> {
               child: ListView(
                 padding: const EdgeInsets.all(20),
                 children: [
-                  // Selected book information
+                  // Book information
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -161,7 +221,7 @@ class _AddEditBookScreenState extends State<AddEditBookScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                widget.book.title,
+                                _title,
                                 maxLines: 3,
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
@@ -172,7 +232,7 @@ class _AddEditBookScreenState extends State<AddEditBookScreen> {
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                widget.book.authorLabel,
+                                _author,
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
@@ -180,10 +240,10 @@ class _AddEditBookScreenState extends State<AddEditBookScreen> {
                                   fontSize: 12,
                                 ),
                               ),
-                              if (widget.book.firstPublishYear != null) ...[
+                              if (_publishYear != null) ...[
                                 const SizedBox(height: 6),
                                 Text(
-                                  'Terbit ${widget.book.firstPublishYear}',
+                                  'Terbit $_publishYear',
                                   style: const TextStyle(
                                     color: AppColors.muted,
                                     fontSize: 11,
@@ -200,7 +260,9 @@ class _AddEditBookScreenState extends State<AddEditBookScreen> {
                   const SizedBox(height: 26),
 
                   Text(
-                    'Atur Koleksi Buku',
+                    _isEditing
+                        ? 'Perbarui Informasi Buku'
+                        : 'Atur Koleksi Buku',
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
 
@@ -260,7 +322,7 @@ class _AddEditBookScreenState extends State<AddEditBookScreen> {
 
                   const SizedBox(height: 20),
 
-                  // Book rating
+                  // Rating
                   const Text(
                     'Rating Buku (Opsional)',
                     style: TextStyle(
@@ -376,9 +438,17 @@ class _AddEditBookScreenState extends State<AddEditBookScreen> {
                                 color: AppColors.white,
                               ),
                             )
-                          : const Icon(Icons.bookmark_add_rounded),
+                          : Icon(
+                              _isEditing
+                                  ? Icons.save_rounded
+                                  : Icons.bookmark_add_rounded,
+                            ),
                       label: Text(
-                        _isSaving ? 'Menyimpan Buku...' : 'Simpan ke Rak Saya',
+                        _isSaving
+                            ? 'Menyimpan...'
+                            : _isEditing
+                            ? 'Simpan Perubahan'
+                            : 'Simpan ke Rak Saya',
                         style: const TextStyle(fontWeight: FontWeight.w700),
                       ),
                     ),
@@ -386,10 +456,15 @@ class _AddEditBookScreenState extends State<AddEditBookScreen> {
 
                   const SizedBox(height: 16),
 
-                  const Text(
-                    'Buku akan disimpan ke koleksi pribadi Readify.',
+                  Text(
+                    _isEditing
+                        ? 'Perubahan akan diperbarui pada koleksi pribadi Readify.'
+                        : 'Buku akan disimpan ke koleksi pribadi Readify.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: AppColors.muted, fontSize: 11),
+                    style: const TextStyle(
+                      color: AppColors.muted,
+                      fontSize: 11,
+                    ),
                   ),
                 ],
               ),

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../core/app_theme.dart';
 import '../models/reading_item.dart';
 import '../providers/reading_provider.dart';
+import 'saved_book_detail_screen.dart';
 
 class LibraryScreen extends StatefulWidget {
   const LibraryScreen({super.key});
@@ -58,6 +59,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 ),
               ),
               const SizedBox(height: 20),
+
+              // Collection
               Expanded(
                 child: Consumer<ReadingProvider>(
                   builder: (context, provider, child) {
@@ -268,6 +271,10 @@ class _LibraryScreenState extends State<LibraryScreen> {
   }
 }
 
+// ======================================
+// READING BOOK CARD
+// ======================================
+
 class _ReadingBookCard extends StatelessWidget {
   final ReadingItem book;
 
@@ -301,6 +308,15 @@ class _ReadingBookCard extends StatelessWidget {
     );
   }
 
+  void _openDetail(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute<void>(
+        builder: (context) => SavedBookDetailScreen(book: book),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final coverUrl = book.coverUrl;
@@ -309,110 +325,127 @@ class _ReadingBookCard extends StatelessWidget {
     return Card(
       color: AppColors.white,
       elevation: 0,
+      clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
         side: const BorderSide(color: AppColors.line),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Row(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: SizedBox(
-                width: 68,
-                height: 96,
-                child: coverUrl != null && coverUrl.isNotEmpty
-                    ? Image.network(
-                        coverUrl,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return _coverPlaceholder();
-                        },
-                      )
-                    : _coverPlaceholder(),
+      child: InkWell(
+        onTap: () => _openDetail(context),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: SizedBox(
+                  width: 68,
+                  height: 96,
+                  child: coverUrl != null && coverUrl.isNotEmpty
+                      ? Image.network(
+                          coverUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return _coverPlaceholder();
+                          },
+                        )
+                      : _coverPlaceholder(),
+                ),
               ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    book.title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: AppColors.ink,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 5),
-                  Text(
-                    book.author.isNotEmpty
-                        ? book.author
-                        : 'Penulis tidak diketahui',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: AppColors.muted,
-                      fontSize: 12,
-                    ),
-                  ),
-                  const SizedBox(height: 7),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 4,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    children: [
-                      _StatusLabel(
-                        label: book.statusLabel,
-                        color: _statusColor(),
-                      ),
-                      if (book.publishYear != null)
-                        Text(
-                          book.publishYear.toString(),
-                          style: const TextStyle(
-                            color: AppColors.muted,
-                            fontSize: 11,
-                          ),
-                        ),
-                    ],
-                  ),
-                  if (rating != null && rating > 0) ...[
-                    const SizedBox(height: 5),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Text(
-                      '★ ${rating.toStringAsFixed(1)} / 5',
+                      book.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        color: AppColors.orange,
-                        fontSize: 12,
+                        color: AppColors.ink,
+                        fontSize: 14,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
-                  ],
-                  if (book.notes.isNotEmpty) ...[
                     const SizedBox(height: 5),
                     Text(
-                      book.notes,
+                      book.author.isNotEmpty
+                          ? book.author
+                          : 'Penulis tidak diketahui',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         color: AppColors.muted,
+                        fontSize: 12,
+                      ),
+                    ),
+                    const SizedBox(height: 7),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        _StatusLabel(
+                          label: book.statusLabel,
+                          color: _statusColor(),
+                        ),
+                        if (book.publishYear != null)
+                          Text(
+                            book.publishYear.toString(),
+                            style: const TextStyle(
+                              color: AppColors.muted,
+                              fontSize: 11,
+                            ),
+                          ),
+                      ],
+                    ),
+                    if (rating != null && rating > 0) ...[
+                      const SizedBox(height: 5),
+                      Text(
+                        '★ ${rating.toStringAsFixed(1)} / 5',
+                        style: const TextStyle(
+                          color: AppColors.orange,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                    if (book.notes.isNotEmpty) ...[
+                      const SizedBox(height: 5),
+                      Text(
+                        book.notes,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: AppColors.muted,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 5),
+                    const Text(
+                      'Lihat detail →',
+                      style: TextStyle(
+                        color: AppColors.forest,
                         fontSize: 11,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                   ],
-                ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 }
+
+// ======================================
+// STATUS LABEL
+// ======================================
 
 class _StatusLabel extends StatelessWidget {
   final String label;
@@ -439,6 +472,10 @@ class _StatusLabel extends StatelessWidget {
     );
   }
 }
+
+// ======================================
+// EMPTY AND ERROR MESSAGE
+// ======================================
 
 class _LibraryMessage extends StatelessWidget {
   final IconData icon;
@@ -495,9 +532,7 @@ class _LibraryMessage extends StatelessWidget {
             if (buttonText != null && onPressed != null) ...[
               const SizedBox(height: 18),
               FilledButton.icon(
-                onPressed: () {
-                  onPressed?.call();
-                },
+                onPressed: () => onPressed!(),
                 icon: const Icon(Icons.refresh_rounded),
                 label: Text(buttonText!),
                 style: FilledButton.styleFrom(

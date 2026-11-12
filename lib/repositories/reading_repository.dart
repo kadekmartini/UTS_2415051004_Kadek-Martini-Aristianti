@@ -63,4 +63,32 @@ class ReadingRepository {
 
     return ReadingItem.fromMap(Map<String, dynamic>.from(response));
   }
+
+  // UPDATE: mengubah data buku yang sudah tersimpan.
+  Future<ReadingItem> updateItem(ReadingItem item) async {
+    final user = _client.auth.currentUser;
+
+    if (user == null) {
+      throw StateError('Pengguna belum login. Silakan masuk kembali.');
+    }
+
+    final response = await _client
+        .from('reading_items')
+        .update({
+          'open_library_key': item.openLibraryKey,
+          'title': item.title,
+          'author': item.author,
+          'cover_url': item.coverUrl,
+          'publish_year': item.publishYear,
+          'status': item.status,
+          'rating': item.rating,
+          'notes': item.notes,
+        })
+        .eq('id', item.id)
+        .eq('user_id', user.id)
+        .select()
+        .single();
+
+    return ReadingItem.fromMap(Map<String, dynamic>.from(response));
+  }
 }

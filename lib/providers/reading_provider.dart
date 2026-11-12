@@ -87,11 +87,38 @@ class ReadingProvider extends ChangeNotifier {
       );
 
       _items.insert(0, newItem);
-
-      // Tampilkan semua buku setelah penambahan berhasil.
       _statusFilter = 'all';
 
       return newItem;
+    } catch (e) {
+      _error = e.toString();
+      rethrow;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // UPDATE: mengubah buku yang sudah tersimpan di Supabase.
+  Future<ReadingItem> updateItem(ReadingItem item) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final updatedItem = await _repository.updateItem(item);
+
+      final index = _items.indexWhere(
+        (existingItem) => existingItem.id == updatedItem.id,
+      );
+
+      if (index != -1) {
+        _items[index] = updatedItem;
+      } else {
+        _items.insert(0, updatedItem);
+      }
+
+      return updatedItem;
     } catch (e) {
       _error = e.toString();
       rethrow;
