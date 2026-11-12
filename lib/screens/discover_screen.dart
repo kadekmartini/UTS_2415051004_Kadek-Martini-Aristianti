@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../core/app_theme.dart';
 import '../models/book.dart';
 import '../providers/catalog_provider.dart';
+import '../widgets/book_card.dart';
 import 'book_detail_screen.dart';
 
 class DiscoverScreen extends StatefulWidget {
@@ -15,15 +16,14 @@ class DiscoverScreen extends StatefulWidget {
 }
 
 class _DiscoverScreenState extends State<DiscoverScreen> {
-  final TextEditingController _searchController =
-      TextEditingController();
+  final TextEditingController _searchController = TextEditingController();
 
   Future<void> _searchBooks() async {
     FocusScope.of(context).unfocus();
 
     await context.read<CatalogProvider>().searchBooks(
-          query: _searchController.text,
-        );
+      query: _searchController.text,
+    );
   }
 
   void _openBookDetail(Book book) {
@@ -67,8 +67,6 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
               const SizedBox(height: 20),
-
-              // Search field
               TextField(
                 controller: _searchController,
                 textInputAction: TextInputAction.search,
@@ -94,17 +92,12 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                   ),
                 ),
               ),
-
               const SizedBox(height: 24),
-
               Text(
                 'Hasil Pencarian',
                 style: Theme.of(context).textTheme.titleLarge,
               ),
-
               const SizedBox(height: 12),
-
-              // Search results from Open Library
               Expanded(
                 child: Consumer<CatalogProvider>(
                   builder: (context, provider, child) {
@@ -151,15 +144,15 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                             itemCount: provider.books.length,
                             gridDelegate:
                                 const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              crossAxisSpacing: 12,
-                              mainAxisSpacing: 12,
-                              childAspectRatio: 3.5,
-                            ),
+                                  crossAxisCount: 2,
+                                  crossAxisSpacing: 12,
+                                  mainAxisSpacing: 12,
+                                  mainAxisExtent: 132,
+                                ),
                             itemBuilder: (context, index) {
                               final book = provider.books[index];
 
-                              return _BookResultCard(
+                              return BookCard(
                                 book: book,
                                 onTap: () => _openBookDetail(book),
                               );
@@ -174,7 +167,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                           itemBuilder: (context, index) {
                             final book = provider.books[index];
 
-                            return _BookResultCard(
+                            return BookCard(
                               book: book,
                               onTap: () => _openBookDetail(book),
                             );
@@ -183,118 +176,6 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                       },
                     );
                   },
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _BookResultCard extends StatelessWidget {
-  final Book book;
-  final VoidCallback onTap;
-
-  const _BookResultCard({
-    required this.book,
-    required this.onTap,
-  });
-
-  Widget _buildPlaceholder() {
-    return Container(
-      width: 68,
-      height: 100,
-      decoration: BoxDecoration(
-        color: AppColors.mint,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: const Icon(
-        Icons.menu_book_rounded,
-        color: AppColors.forest,
-        size: 30,
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final coverUrl = book.coverUrl;
-
-    return Card(
-      color: AppColors.white,
-      elevation: 0,
-      clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: AppColors.line),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Row(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: SizedBox(
-                  width: 68,
-                  height: 100,
-                  child: coverUrl != null && coverUrl.isNotEmpty
-                      ? Image.network(
-                          coverUrl,
-                          fit: BoxFit.cover,
-                          loadingBuilder: (context, child, progress) {
-                            if (progress == null) {
-                              return child;
-                            }
-
-                            return _buildPlaceholder();
-                          },
-                          errorBuilder: (context, error, stackTrace) {
-                            return _buildPlaceholder();
-                          },
-                        )
-                      : _buildPlaceholder(),
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      book.title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: AppColors.ink,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      book.authorLabel,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: AppColors.muted,
-                        fontSize: 12,
-                      ),
-                    ),
-                    const SizedBox(height: 7),
-                    const Text(
-                      'Lihat detail buku →',
-                      style: TextStyle(
-                        color: AppColors.forest,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
                 ),
               ),
             ],
@@ -328,11 +209,7 @@ class _FeedbackMessage extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              icon,
-              color: AppColors.leaf,
-              size: 52,
-            ),
+            Icon(icon, color: AppColors.leaf, size: 52),
             const SizedBox(height: 14),
             Text(
               title,

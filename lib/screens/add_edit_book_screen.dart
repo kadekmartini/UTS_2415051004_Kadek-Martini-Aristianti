@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -6,13 +7,14 @@ import '../core/app_theme.dart';
 import '../models/book.dart';
 import '../models/reading_item.dart';
 import '../providers/reading_provider.dart';
+import '../widgets/book_cover.dart';
 
 class AddEditBookScreen extends StatefulWidget {
   final Book? book;
   final ReadingItem? readingItem;
 
   const AddEditBookScreen({super.key, this.book, this.readingItem})
-    : assert((book == null) != (readingItem == null));
+      : assert((book == null) != (readingItem == null));
 
   @override
   State<AddEditBookScreen> createState() => _AddEditBookScreenState();
@@ -119,7 +121,10 @@ class _AddEditBookScreenState extends State<AddEditBookScreen> {
           : 'Gagal menyimpan buku: ${e.message}';
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message), backgroundColor: AppColors.orange),
+        SnackBar(
+          content: Text(message),
+          backgroundColor: AppColors.orange,
+        ),
       );
     } catch (e) {
       if (!mounted) return;
@@ -147,42 +152,6 @@ class _AddEditBookScreenState extends State<AddEditBookScreen> {
   void dispose() {
     _notesController.dispose();
     super.dispose();
-  }
-
-  Widget _buildBookCover() {
-    final coverUrl = _coverUrl;
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(12),
-      child: SizedBox(
-        width: 85,
-        height: 115,
-        child: coverUrl != null && coverUrl.isNotEmpty
-            ? Image.network(
-                coverUrl,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return _coverPlaceholder();
-                },
-                loadingBuilder: (context, child, progress) {
-                  if (progress == null) return child;
-                  return _coverPlaceholder();
-                },
-              )
-            : _coverPlaceholder(),
-      ),
-    );
-  }
-
-  Widget _coverPlaceholder() {
-    return Container(
-      color: AppColors.mint,
-      child: const Icon(
-        Icons.menu_book_rounded,
-        color: AppColors.forest,
-        size: 35,
-      ),
-    );
   }
 
   @override
@@ -214,7 +183,13 @@ class _AddEditBookScreenState extends State<AddEditBookScreen> {
                     ),
                     child: Row(
                       children: [
-                        _buildBookCover(),
+                        BookCover(
+                          coverUrl: _coverUrl,
+                          width: 85,
+                          height: 115,
+                          iconSize: 35,
+                          borderRadius: 12,
+                        ),
                         const SizedBox(width: 16),
                         Expanded(
                           child: Column(
@@ -447,9 +422,11 @@ class _AddEditBookScreenState extends State<AddEditBookScreen> {
                         _isSaving
                             ? 'Menyimpan...'
                             : _isEditing
-                            ? 'Simpan Perubahan'
-                            : 'Simpan ke Rak Saya',
-                        style: const TextStyle(fontWeight: FontWeight.w700),
+                                ? 'Simpan Perubahan'
+                                : 'Simpan ke Rak Saya',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                   ),

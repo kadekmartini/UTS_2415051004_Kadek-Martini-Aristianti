@@ -1,9 +1,11 @@
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../core/app_theme.dart';
 import '../models/reading_item.dart';
 import '../providers/reading_provider.dart';
+import '../widgets/reading_item_card.dart';
 import 'saved_book_detail_screen.dart';
 
 class LibraryScreen extends StatefulWidget {
@@ -27,6 +29,15 @@ class _LibraryScreenState extends State<LibraryScreen> {
 
   Future<void> _refreshBooks() async {
     await context.read<ReadingProvider>().loadItems();
+  }
+
+  void _openBookDetail(ReadingItem book) {
+    Navigator.push(
+      context,
+      MaterialPageRoute<void>(
+        builder: (context) => SavedBookDetailScreen(book: book),
+      ),
+    );
   }
 
   @override
@@ -59,8 +70,6 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 ),
               ),
               const SizedBox(height: 20),
-
-              // Collection
               Expanded(
                 child: Consumer<ReadingProvider>(
                   builder: (context, provider, child) {
@@ -72,7 +81,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
                       );
                     }
 
-                    if (provider.error != null && provider.items.isEmpty) {
+                    if (provider.error != null &&
+                        provider.items.isEmpty) {
                       return _LibraryMessage(
                         icon: Icons.wifi_off_rounded,
                         title: 'Gagal Memuat Rak Buku',
@@ -86,14 +96,14 @@ class _LibraryScreenState extends State<LibraryScreen> {
                       return const _LibraryMessage(
                         icon: Icons.menu_book_rounded,
                         title: 'Rak Bukumu Masih Kosong',
-                        message: 'Buku yang kamu simpan nantinya akan muncul di sini.',
+                        message:
+                            'Buku yang kamu simpan nantinya akan muncul di sini.',
                       );
                     }
 
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Collection statistics
                         Container(
                           width: double.infinity,
                           padding: const EdgeInsets.all(16),
@@ -112,7 +122,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.start,
                                   children: [
                                     const Text(
                                       'Total Koleksi',
@@ -143,10 +154,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                             ],
                           ),
                         ),
-
                         const SizedBox(height: 18),
-
-                        // Reading status filters
                         SingleChildScrollView(
                           scrollDirection: Axis.horizontal,
                           child: Row(
@@ -170,15 +178,12 @@ class _LibraryScreenState extends State<LibraryScreen> {
                             ],
                           ),
                         ),
-
                         const SizedBox(height: 14),
-
                         if (provider.isLoading)
                           const LinearProgressIndicator(
                             color: AppColors.forest,
                             backgroundColor: AppColors.mint,
                           ),
-
                         if (provider.error != null)
                           Padding(
                             padding: const EdgeInsets.only(bottom: 10),
@@ -190,9 +195,10 @@ class _LibraryScreenState extends State<LibraryScreen> {
                               ),
                             ),
                           ),
-
                         Expanded(
-                          child: _buildBookCollection(provider.filteredItems),
+                          child: _buildBookCollection(
+                            provider.filteredItems,
+                          ),
                         ),
                       ],
                     );
@@ -206,7 +212,11 @@ class _LibraryScreenState extends State<LibraryScreen> {
     );
   }
 
-  Widget _buildFilter(ReadingProvider provider, String value, String label) {
+  Widget _buildFilter(
+    ReadingProvider provider,
+    String value,
+    String label,
+  ) {
     final selected = provider.statusFilter == value;
 
     return Padding(
@@ -224,7 +234,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
           fontWeight: FontWeight.w600,
           fontSize: 12,
         ),
-        side: BorderSide(color: selected ? AppColors.leaf : AppColors.line),
+        side: BorderSide(
+          color: selected ? AppColors.leaf : AppColors.line,
+        ),
       ),
     );
   }
@@ -246,14 +258,20 @@ class _LibraryScreenState extends State<LibraryScreen> {
           return GridView.builder(
             physics: const AlwaysScrollableScrollPhysics(),
             itemCount: books.length,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            gridDelegate:
+                const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
               crossAxisSpacing: 12,
               mainAxisSpacing: 12,
               childAspectRatio: 2.5,
             ),
             itemBuilder: (context, index) {
-              return _ReadingBookCard(book: books[index]);
+              final book = books[index];
+
+              return ReadingItemCard(
+                book: book,
+                onTap: () => _openBookDetail(book),
+              );
             },
           );
         }
@@ -261,221 +279,21 @@ class _LibraryScreenState extends State<LibraryScreen> {
         return ListView.separated(
           physics: const AlwaysScrollableScrollPhysics(),
           itemCount: books.length,
-          separatorBuilder: (context, index) => const SizedBox(height: 12),
+          separatorBuilder: (context, index) =>
+              const SizedBox(height: 12),
           itemBuilder: (context, index) {
-            return _ReadingBookCard(book: books[index]);
+            final book = books[index];
+
+            return ReadingItemCard(
+              book: book,
+              onTap: () => _openBookDetail(book),
+            );
           },
         );
       },
     );
   }
 }
-
-// ======================================
-// READING BOOK CARD
-// ======================================
-
-class _ReadingBookCard extends StatelessWidget {
-  final ReadingItem book;
-
-  const _ReadingBookCard({required this.book});
-
-  Color _statusColor() {
-    if (book.status == 'reading') {
-      return AppColors.orange;
-    }
-
-    if (book.status == 'finished') {
-      return AppColors.leaf;
-    }
-
-    return AppColors.forest;
-  }
-
-  Widget _coverPlaceholder() {
-    return Container(
-      width: 68,
-      height: 96,
-      decoration: BoxDecoration(
-        color: AppColors.mint,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: const Icon(
-        Icons.menu_book_rounded,
-        color: AppColors.forest,
-        size: 30,
-      ),
-    );
-  }
-
-  void _openDetail(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute<void>(
-        builder: (context) => SavedBookDetailScreen(book: book),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final coverUrl = book.coverUrl;
-    final rating = book.rating;
-
-    return Card(
-      color: AppColors.white,
-      elevation: 0,
-      clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: AppColors.line),
-      ),
-      child: InkWell(
-        onTap: () => _openDetail(context),
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Row(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: SizedBox(
-                  width: 68,
-                  height: 96,
-                  child: coverUrl != null && coverUrl.isNotEmpty
-                      ? Image.network(
-                          coverUrl,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return _coverPlaceholder();
-                          },
-                        )
-                      : _coverPlaceholder(),
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      book.title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: AppColors.ink,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 5),
-                    Text(
-                      book.author.isNotEmpty
-                          ? book.author
-                          : 'Penulis tidak diketahui',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: AppColors.muted,
-                        fontSize: 12,
-                      ),
-                    ),
-                    const SizedBox(height: 7),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 4,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
-                        _StatusLabel(
-                          label: book.statusLabel,
-                          color: _statusColor(),
-                        ),
-                        if (book.publishYear != null)
-                          Text(
-                            book.publishYear.toString(),
-                            style: const TextStyle(
-                              color: AppColors.muted,
-                              fontSize: 11,
-                            ),
-                          ),
-                      ],
-                    ),
-                    if (rating != null && rating > 0) ...[
-                      const SizedBox(height: 5),
-                      Text(
-                        '★ ${rating.toStringAsFixed(1)} / 5',
-                        style: const TextStyle(
-                          color: AppColors.orange,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
-                    if (book.notes.isNotEmpty) ...[
-                      const SizedBox(height: 5),
-                      Text(
-                        book.notes,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: AppColors.muted,
-                          fontSize: 11,
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 5),
-                    const Text(
-                      'Lihat detail →',
-                      style: TextStyle(
-                        color: AppColors.forest,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ======================================
-// STATUS LABEL
-// ======================================
-
-class _StatusLabel extends StatelessWidget {
-  final String label;
-  final Color color;
-
-  const _StatusLabel({required this.label, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: color,
-          fontSize: 10,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-    );
-  }
-}
-
-// ======================================
-// EMPTY AND ERROR MESSAGE
-// ======================================
 
 class _LibraryMessage extends StatelessWidget {
   final IconData icon;
@@ -507,7 +325,11 @@ class _LibraryMessage extends StatelessWidget {
                 color: AppColors.mint,
                 borderRadius: BorderRadius.circular(25),
               ),
-              child: Icon(icon, color: AppColors.forest, size: 42),
+              child: Icon(
+                icon,
+                color: AppColors.forest,
+                size: 42,
+              ),
             ),
             const SizedBox(height: 20),
             Text(

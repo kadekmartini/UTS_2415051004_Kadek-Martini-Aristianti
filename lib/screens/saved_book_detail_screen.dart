@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../core/app_theme.dart';
 import '../models/reading_item.dart';
 import '../providers/reading_provider.dart';
+import '../widgets/book_cover.dart';
 import 'add_edit_book_screen.dart';
 
 class SavedBookDetailScreen extends StatefulWidget {
@@ -31,7 +32,7 @@ class _SavedBookDetailScreenState
     _currentBook = widget.book;
   }
 
-  // EDIT: membuka halaman untuk mengubah data buku.
+
   Future<void> _editBook() async {
     final result = await Navigator.push<bool>(
       context,
@@ -69,7 +70,7 @@ class _SavedBookDetailScreenState
     }
   }
 
-  // DELETE: menampilkan dialog konfirmasi sebelum menghapus buku.
+
   Future<void> _deleteBook() async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -77,9 +78,7 @@ class _SavedBookDetailScreenState
         return AlertDialog(
           title: const Text(
             'Hapus Buku?',
-            style: TextStyle(
-              fontWeight: FontWeight.w800,
-            ),
+            style: TextStyle(fontWeight: FontWeight.w800),
           ),
           content: Text(
             'Apakah kamu yakin ingin menghapus '
@@ -127,7 +126,6 @@ class _SavedBookDetailScreenState
         _isDeleting = false;
       });
 
-      // Kembali ke Rak Saya setelah penghapusan berhasil.
       navigator.pop();
 
       messenger.showSnackBar(
@@ -150,38 +148,6 @@ class _SavedBookDetailScreenState
         ),
       );
     }
-  }
-
-  Widget _buildCover() {
-    final coverUrl = _currentBook.coverUrl;
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
-      child: SizedBox(
-        width: 180,
-        height: 260,
-        child: coverUrl != null && coverUrl.isNotEmpty
-            ? Image.network(
-                coverUrl,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return _coverPlaceholder();
-                },
-              )
-            : _coverPlaceholder(),
-      ),
-    );
-  }
-
-  Widget _coverPlaceholder() {
-    return Container(
-      color: AppColors.mint,
-      child: const Icon(
-        Icons.menu_book_rounded,
-        color: AppColors.forest,
-        size: 70,
-      ),
-    );
   }
 
   Widget _buildInfo({
@@ -227,9 +193,7 @@ class _SavedBookDetailScreenState
       appBar: AppBar(
         title: const Text(
           'Detail Buku Tersimpan',
-          style: TextStyle(
-            fontWeight: FontWeight.w800,
-          ),
+          style: TextStyle(fontWeight: FontWeight.w800),
         ),
       ),
       body: SafeArea(
@@ -259,9 +223,7 @@ class _SavedBookDetailScreenState
                   decoration: BoxDecoration(
                     color: AppColors.white,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: AppColors.line,
-                    ),
+                    border: Border.all(color: AppColors.line),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -309,24 +271,32 @@ class _SavedBookDetailScreenState
               padding: const EdgeInsets.all(20),
               child: Center(
                 child: ConstrainedBox(
-                  constraints: const BoxConstraints(
-                    maxWidth: 1000,
-                  ),
+                  constraints: const BoxConstraints(maxWidth: 1000),
                   child: isWide
                       ? Row(
-                          crossAxisAlignment:
-                              CrossAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _buildCover(),
+                            BookCover(
+                              coverUrl: book.coverUrl,
+                              width: 180,
+                              height: 260,
+                              iconSize: 70,
+                              borderRadius: 16,
+                            ),
                             const SizedBox(width: 28),
                             Expanded(child: information),
                           ],
                         )
                       : Column(
-                          crossAxisAlignment:
-                              CrossAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            _buildCover(),
+                            BookCover(
+                              coverUrl: book.coverUrl,
+                              width: 180,
+                              height: 260,
+                              iconSize: 70,
+                              borderRadius: 16,
+                            ),
                             const SizedBox(height: 24),
                             information,
                           ],
@@ -351,9 +321,7 @@ class _SavedBookDetailScreenState
                   icon: const Icon(Icons.edit_rounded),
                   label: const Text(
                     'Edit Buku',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w700,
-                    ),
+                    style: TextStyle(fontWeight: FontWeight.w700),
                   ),
                   style: FilledButton.styleFrom(
                     backgroundColor: AppColors.forest,
@@ -387,9 +355,7 @@ class _SavedBookDetailScreenState
                   ),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Colors.red,
-                    side: const BorderSide(
-                      color: Colors.red,
-                    ),
+                    side: const BorderSide(color: Colors.red),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(15),
                     ),
