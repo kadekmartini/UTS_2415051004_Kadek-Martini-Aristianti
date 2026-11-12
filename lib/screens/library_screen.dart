@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../core/app_theme.dart';
 import '../models/reading_item.dart';
 import '../providers/reading_provider.dart';
+import '../widgets/feedback_state.dart';
 import '../widgets/reading_item_card.dart';
 import 'saved_book_detail_screen.dart';
 
@@ -74,16 +75,16 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 child: Consumer<ReadingProvider>(
                   builder: (context, provider, child) {
                     if (provider.isLoading && provider.items.isEmpty) {
-                      return const Center(
-                        child: CircularProgressIndicator(
-                          color: AppColors.forest,
-                        ),
+                      return const FeedbackState(
+                        isLoading: true,
+                        title: 'Memuat Rak Buku',
+                        message: 'Sedang mengambil koleksi bukumu.',
                       );
                     }
 
                     if (provider.error != null &&
                         provider.items.isEmpty) {
-                      return _LibraryMessage(
+                      return FeedbackState(
                         icon: Icons.wifi_off_rounded,
                         title: 'Gagal Memuat Rak Buku',
                         message: provider.error!,
@@ -93,7 +94,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                     }
 
                     if (provider.items.isEmpty) {
-                      return const _LibraryMessage(
+                      return const FeedbackState(
                         icon: Icons.menu_book_rounded,
                         title: 'Rak Bukumu Masih Kosong',
                         message:
@@ -243,7 +244,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
 
   Widget _buildBookCollection(List<ReadingItem> books) {
     if (books.isEmpty) {
-      return const _LibraryMessage(
+      return const FeedbackState(
         icon: Icons.filter_list_off_rounded,
         title: 'Tidak Ada Buku',
         message: 'Belum ada buku dengan status membaca ini.',
@@ -291,81 +292,6 @@ class _LibraryScreenState extends State<LibraryScreen> {
           },
         );
       },
-    );
-  }
-}
-
-class _LibraryMessage extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String message;
-  final String? buttonText;
-  final Future<void> Function()? onPressed;
-
-  const _LibraryMessage({
-    required this.icon,
-    required this.title,
-    required this.message,
-    this.buttonText,
-    this.onPressed,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 90,
-              height: 90,
-              decoration: BoxDecoration(
-                color: AppColors.mint,
-                borderRadius: BorderRadius.circular(25),
-              ),
-              child: Icon(
-                icon,
-                color: AppColors.forest,
-                size: 42,
-              ),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: AppColors.ink,
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: AppColors.muted,
-                fontSize: 13,
-                height: 1.5,
-              ),
-            ),
-            if (buttonText != null && onPressed != null) ...[
-              const SizedBox(height: 18),
-              FilledButton.icon(
-                onPressed: () => onPressed!(),
-                icon: const Icon(Icons.refresh_rounded),
-                label: Text(buttonText!),
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.forest,
-                  foregroundColor: AppColors.white,
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
     );
   }
 }
