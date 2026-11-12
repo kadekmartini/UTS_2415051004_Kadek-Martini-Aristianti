@@ -43,6 +43,7 @@ class ReadingProvider extends ChangeNotifier {
   int get finishedCount =>
       _items.where((item) => item.status == 'finished').length;
 
+  // READ: mengambil koleksi buku dari Supabase.
   Future<void> loadItems() async {
     _isLoading = true;
     _error = null;
@@ -52,6 +53,48 @@ class ReadingProvider extends ChangeNotifier {
       _items = await _repository.getItems();
     } catch (e) {
       _error = e.toString();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // CREATE: menyimpan buku baru ke Supabase.
+  Future<ReadingItem> createItem({
+    required String openLibraryKey,
+    required String title,
+    required String author,
+    String? coverUrl,
+    int? publishYear,
+    String status = 'want_to_read',
+    double? rating,
+    String notes = '',
+  }) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final newItem = await _repository.createItem(
+        openLibraryKey: openLibraryKey,
+        title: title,
+        author: author,
+        coverUrl: coverUrl,
+        publishYear: publishYear,
+        status: status,
+        rating: rating,
+        notes: notes,
+      );
+
+      _items.insert(0, newItem);
+
+      // Tampilkan semua buku setelah penambahan berhasil.
+      _statusFilter = 'all';
+
+      return newItem;
+    } catch (e) {
+      _error = e.toString();
+      rethrow;
     } finally {
       _isLoading = false;
       notifyListeners();

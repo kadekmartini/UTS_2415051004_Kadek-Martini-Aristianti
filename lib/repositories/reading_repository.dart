@@ -9,6 +9,7 @@ class ReadingRepository {
 
   SupabaseClient get _client => _providedClient ?? Supabase.instance.client;
 
+  // READ: mengambil koleksi buku dari Supabase.
   Future<List<ReadingItem>> getItems() async {
     final user = _client.auth.currentUser;
 
@@ -25,5 +26,41 @@ class ReadingRepository {
     return response
         .map((item) => ReadingItem.fromMap(Map<String, dynamic>.from(item)))
         .toList();
+  }
+
+  // CREATE: menyimpan buku baru ke Supabase.
+  Future<ReadingItem> createItem({
+    required String openLibraryKey,
+    required String title,
+    required String author,
+    String? coverUrl,
+    int? publishYear,
+    String status = 'want_to_read',
+    double? rating,
+    String notes = '',
+  }) async {
+    final user = _client.auth.currentUser;
+
+    if (user == null) {
+      throw StateError('Pengguna belum login. Silakan masuk kembali.');
+    }
+
+    final response = await _client
+        .from('reading_items')
+        .insert({
+          'user_id': user.id,
+          'open_library_key': openLibraryKey,
+          'title': title,
+          'author': author,
+          'cover_url': coverUrl,
+          'publish_year': publishYear,
+          'status': status,
+          'rating': rating,
+          'notes': notes,
+        })
+        .select()
+        .single();
+
+    return ReadingItem.fromMap(Map<String, dynamic>.from(response));
   }
 }

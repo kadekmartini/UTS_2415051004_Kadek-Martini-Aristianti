@@ -1,16 +1,22 @@
-
 import 'package:flutter/material.dart';
 
 import '../core/app_theme.dart';
 import '../models/book.dart';
+import 'add_edit_book_screen.dart';
 
 class BookDetailScreen extends StatelessWidget {
   final Book book;
 
-  const BookDetailScreen({
-    super.key,
-    required this.book,
-  });
+  const BookDetailScreen({super.key, required this.book});
+
+  Future<void> _openAddToShelf(BuildContext context) async {
+    await Navigator.push<bool>(
+      context,
+      MaterialPageRoute<bool>(
+        builder: (context) => AddEditBookScreen(book: book),
+      ),
+    );
+  }
 
   Widget _buildCover() {
     final coverUrl = book.coverUrl;
@@ -51,10 +57,7 @@ class BookDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildInfo({
-    required String label,
-    required String value,
-  }) {
+  Widget _buildInfo({required String label, required String value}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10),
       child: Row(
@@ -64,10 +67,7 @@ class BookDetailScreen extends StatelessWidget {
             width: 150,
             child: Text(
               label,
-              style: const TextStyle(
-                color: AppColors.muted,
-                fontSize: 13,
-              ),
+              style: const TextStyle(color: AppColors.muted, fontSize: 13),
             ),
           ),
           Expanded(
@@ -91,10 +91,7 @@ class BookDetailScreen extends StatelessWidget {
     if (subjects.isEmpty) {
       return const Text(
         'Kategori belum tersedia.',
-        style: TextStyle(
-          color: AppColors.muted,
-          fontSize: 13,
-        ),
+        style: TextStyle(color: AppColors.muted, fontSize: 13),
       );
     }
 
@@ -103,10 +100,7 @@ class BookDetailScreen extends StatelessWidget {
       runSpacing: 8,
       children: subjects.map((subject) {
         return Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 12,
-            vertical: 8,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
             color: AppColors.mint,
             borderRadius: BorderRadius.circular(20),
@@ -149,12 +143,11 @@ class BookDetailScreen extends StatelessWidget {
                 const SizedBox(height: 10),
                 Text(
                   book.authorLabel,
-                  style: const TextStyle(
-                    color: AppColors.muted,
-                    fontSize: 15,
-                  ),
+                  style: const TextStyle(color: AppColors.muted, fontSize: 15),
                 ),
                 const SizedBox(height: 20),
+
+                // Book information
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
@@ -174,26 +167,26 @@ class BookDetailScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 12),
-                      _buildInfo(
-                        label: 'Penulis',
-                        value: book.authorLabel,
-                      ),
+                      _buildInfo(label: 'Penulis', value: book.authorLabel),
                       const Divider(color: AppColors.line),
                       _buildInfo(
                         label: 'Tahun terbit pertama',
-                        value: book.firstPublishYear?.toString() ??
+                        value:
+                            book.firstPublishYear?.toString() ??
                             'Tidak tersedia',
                       ),
                       const Divider(color: AppColors.line),
                       _buildInfo(
                         label: 'Jumlah edisi',
-                        value: book.editionCount?.toString() ??
-                            'Tidak tersedia',
+                        value:
+                            book.editionCount?.toString() ?? 'Tidak tersedia',
                       ),
                     ],
                   ),
                 ),
+
                 const SizedBox(height: 20),
+
                 const Text(
                   'Kategori Buku',
                   style: TextStyle(
@@ -202,7 +195,9 @@ class BookDetailScreen extends StatelessWidget {
                     fontWeight: FontWeight.w800,
                   ),
                 ),
+
                 const SizedBox(height: 12),
+
                 _buildSubjects(),
               ],
             );
@@ -233,6 +228,31 @@ class BookDetailScreen extends StatelessWidget {
               ),
             );
           },
+        ),
+      ),
+
+      // Add to personal bookshelf button
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 10, 20, 16),
+          child: SizedBox(
+            height: 52,
+            child: FilledButton.icon(
+              onPressed: () => _openAddToShelf(context),
+              icon: const Icon(Icons.bookmark_add_rounded),
+              label: const Text(
+                'Tambah ke Rak Saya',
+                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+              ),
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.forest,
+                foregroundColor: AppColors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15),
+                ),
+              ),
+            ),
+          ),
         ),
       ),
     );
