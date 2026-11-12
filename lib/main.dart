@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 
 import 'core/app_theme.dart';
-import 'screens/home_screen.dart';
+import 'screens/main_shell.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+
   runApp(const ReadifyApp());
 }
 
@@ -19,7 +21,7 @@ class ReadifyApp extends StatelessWidget {
 
       theme: AppTheme.light,
 
-      home: const HomeScreen(),
+      home: const MainShell(),
     );
   }
 }
