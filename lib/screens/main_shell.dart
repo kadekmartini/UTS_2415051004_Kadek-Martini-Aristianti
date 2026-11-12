@@ -1,6 +1,9 @@
+
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../core/app_theme.dart';
+import '../providers/reading_provider.dart';
 import 'home_screen.dart';
 import 'discover_screen.dart';
 import 'library_screen.dart';
@@ -16,12 +19,22 @@ class MainShell extends StatefulWidget {
 class _MainShellState extends State<MainShell> {
   int _selectedIndex = 0;
 
-  final List<Widget> _pages = const [
-    HomeScreen(),
-    DiscoverScreen(),
-    LibraryScreen(),
-    ProfileScreen(),
-  ];
+  late final List<Widget> _pages;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _pages = [
+      HomeScreen(
+        onOpenProfile: _openProfile,
+        onOpenLibrary: _openLibrary,
+      ),
+      const DiscoverScreen(),
+      const LibraryScreen(),
+      const ProfileScreen(),
+    ];
+  }
 
   void _onDestinationSelected(int index) {
     setState(() {
@@ -29,15 +42,23 @@ class _MainShellState extends State<MainShell> {
     });
   }
 
+  void _openProfile() {
+    _onDestinationSelected(3);
+  }
+
+  void _openLibrary(String status) {
+    context.read<ReadingProvider>().setStatusFilter(status);
+    _onDestinationSelected(2);
+  }
+
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final bool isWide = constraints.maxWidth >= 900;
+        final isWide = constraints.maxWidth >= 900;
 
         return Scaffold(
           backgroundColor: AppColors.cream,
-
           body: Row(
             children: [
               if (isWide) ...[
@@ -47,45 +68,37 @@ class _MainShellState extends State<MainShell> {
                   onDestinationSelected: _onDestinationSelected,
                   labelType: NavigationRailLabelType.all,
                   minWidth: 76,
-
                   selectedIconTheme: const IconThemeData(
                     color: AppColors.forest,
                   ),
-
                   unselectedIconTheme: const IconThemeData(
                     color: AppColors.muted,
                   ),
-
                   selectedLabelTextStyle: const TextStyle(
                     color: AppColors.forest,
                     fontWeight: FontWeight.w800,
                     fontSize: 11,
                   ),
-
                   unselectedLabelTextStyle: const TextStyle(
                     color: AppColors.muted,
                     fontSize: 11,
                   ),
-
                   destinations: const [
                     NavigationRailDestination(
                       icon: Icon(Icons.home_outlined),
                       selectedIcon: Icon(Icons.home_rounded),
                       label: Text('Beranda'),
                     ),
-
                     NavigationRailDestination(
                       icon: Icon(Icons.explore_outlined),
                       selectedIcon: Icon(Icons.explore_rounded),
                       label: Text('Jelajah'),
                     ),
-
                     NavigationRailDestination(
                       icon: Icon(Icons.bookmarks_outlined),
                       selectedIcon: Icon(Icons.bookmarks_rounded),
                       label: Text('Rak Saya'),
                     ),
-
                     NavigationRailDestination(
                       icon: Icon(Icons.person_outline_rounded),
                       selectedIcon: Icon(Icons.person_rounded),
@@ -93,20 +106,20 @@ class _MainShellState extends State<MainShell> {
                     ),
                   ],
                 ),
-
                 const VerticalDivider(
                   width: 1,
                   thickness: 1,
                   color: AppColors.line,
                 ),
               ],
-
               Expanded(
-                child: IndexedStack(index: _selectedIndex, children: _pages),
+                child: IndexedStack(
+                  index: _selectedIndex,
+                  children: _pages,
+                ),
               ),
             ],
           ),
-
           bottomNavigationBar: isWide
               ? null
               : NavigationBar(
@@ -114,26 +127,22 @@ class _MainShellState extends State<MainShell> {
                   onDestinationSelected: _onDestinationSelected,
                   backgroundColor: Colors.white,
                   indicatorColor: AppColors.mint,
-
                   destinations: const [
                     NavigationDestination(
                       icon: Icon(Icons.home_outlined),
                       selectedIcon: Icon(Icons.home_rounded),
                       label: 'Beranda',
                     ),
-
                     NavigationDestination(
                       icon: Icon(Icons.explore_outlined),
                       selectedIcon: Icon(Icons.explore_rounded),
                       label: 'Jelajah',
                     ),
-
                     NavigationDestination(
                       icon: Icon(Icons.bookmarks_outlined),
                       selectedIcon: Icon(Icons.bookmarks_rounded),
                       label: 'Rak Saya',
                     ),
-
                     NavigationDestination(
                       icon: Icon(Icons.person_outline_rounded),
                       selectedIcon: Icon(Icons.person_rounded),

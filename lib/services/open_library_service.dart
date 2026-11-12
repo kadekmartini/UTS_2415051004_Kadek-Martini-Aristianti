@@ -1,4 +1,3 @@
-
 import 'dart:async';
 import 'dart:convert';
 
@@ -9,8 +8,7 @@ import '../models/book.dart';
 class OpenLibraryService {
   final http.Client _client;
 
-  OpenLibraryService({http.Client? client})
-      : _client = client ?? http.Client();
+  OpenLibraryService({http.Client? client}) : _client = client ?? http.Client();
 
   Future<List<Book>> searchBooks({
     required String query,
@@ -23,26 +21,16 @@ class OpenLibraryService {
       return [];
     }
 
-    final uri = Uri.https(
-      'openlibrary.org',
-      '/search.json',
-      {
-        'q': keyword,
-        'fields':
-            'key,title,author_name,first_publish_year,cover_i,edition_count,subject',
-        'limit': limit.toString(),
-        'page': page.toString(),
-      },
-    );
+    final uri = Uri.https('openlibrary.org', '/search.json', {
+      'q': keyword,
+      'fields': 'key,title,author_name,first_publish_year,cover_i,edition_count,subject',
+      'limit': limit.toString(),
+      'page': page.toString(),
+    });
 
     try {
       final response = await _client
-          .get(
-            uri,
-            headers: {
-              'Accept': 'application/json',
-            },
-          )
+          .get(uri, headers: {'Accept': 'application/json'})
           .timeout(const Duration(seconds: 15));
 
       if (response.statusCode != 200) {
@@ -55,9 +43,7 @@ class OpenLibraryService {
       final decoded = jsonDecode(response.body);
 
       if (decoded is! Map<String, dynamic>) {
-        throw const OpenLibraryException(
-          'Format respons API tidak valid.',
-        );
+        throw const OpenLibraryException('Format respons API tidak valid.');
       }
 
       final docs = decoded['docs'];
@@ -81,9 +67,7 @@ class OpenLibraryService {
         'Tidak dapat terhubung ke Open Library.',
       );
     } on FormatException {
-      throw const OpenLibraryException(
-        'Gagal membaca format data dari API.',
-      );
+      throw const OpenLibraryException('Gagal membaca format data dari API.');
     }
   }
 }

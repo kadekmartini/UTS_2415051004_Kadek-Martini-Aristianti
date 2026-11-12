@@ -1,18 +1,49 @@
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
 import 'package:readify/core/app_theme.dart';
+import 'package:readify/models/book.dart';
+import 'package:readify/models/reading_item.dart';
 import 'package:readify/providers/catalog_provider.dart';
 import 'package:readify/providers/reading_provider.dart';
+import 'package:readify/repositories/book_repository.dart';
+import 'package:readify/repositories/reading_repository.dart';
 import 'package:readify/screens/home_screen.dart';
 import 'package:readify/screens/main_shell.dart';
+
+class FakeBookRepository implements BookRepository {
+  @override
+  Future<List<Book>> searchBooks({
+    required String query,
+    int limit = 20,
+    int page = 1,
+  }) async {
+    return [];
+  }
+}
+
+class FakeReadingRepository extends ReadingRepository {
+  @override
+  Future<List<ReadingItem>> getItems() async {
+    return [];
+  }
+}
 
 Widget buildTestApp({required Widget home}) {
   return MultiProvider(
     providers: [
-      ChangeNotifierProvider(create: (context) => CatalogProvider()),
-      ChangeNotifierProvider(create: (context) => ReadingProvider()),
+      ChangeNotifierProvider(
+        create: (context) => CatalogProvider(
+          repository: FakeBookRepository(),
+        ),
+      ),
+      ChangeNotifierProvider(
+        create: (context) => ReadingProvider(
+          repository: FakeReadingRepository(),
+        ),
+      ),
     ],
     child: MaterialApp(
       debugShowCheckedModeBanner: false,
@@ -40,7 +71,15 @@ void main() {
         findsOneWidget,
       );
 
-      expect(find.byKey(const ValueKey('wide-recommendations')), findsNothing);
+      expect(
+        find.byType(ListView),
+        findsWidgets,
+      );
+
+      expect(
+        find.byKey(const ValueKey('wide-recommendations')),
+        findsNothing,
+      );
 
       expect(tester.takeException(), isNull);
     });
@@ -59,6 +98,11 @@ void main() {
       expect(
         find.byKey(const ValueKey('wide-recommendations')),
         findsOneWidget,
+      );
+
+      expect(
+        find.byType(GridView),
+        findsWidgets,
       );
 
       expect(
@@ -110,7 +154,10 @@ void main() {
 
       expect(find.text('PTI 5 C'), findsNWidgets(2));
 
-      expect(find.text('Pendidikan Teknik Informatika'), findsOneWidget);
+      expect(
+        find.text('Pendidikan Teknik Informatika'),
+        findsOneWidget,
+      );
 
       expect(tester.takeException(), isNull);
     });

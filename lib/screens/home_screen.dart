@@ -1,13 +1,85 @@
+
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../core/app_theme.dart';
+import '../models/book.dart';
+import '../providers/catalog_provider.dart';
+import '../providers/reading_provider.dart';
+import '../widgets/book_card.dart';
+import '../widgets/feedback_state.dart';
+import 'book_detail_screen.dart';
+import 'library_screen.dart';
+import 'profile_screen.dart';
 
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+class HomeScreen extends StatefulWidget {
+  final VoidCallback? onOpenProfile;
+  final ValueChanged<String>? onOpenLibrary;
+
+  const HomeScreen({
+    super.key,
+    this.onOpenProfile,
+    this.onOpenLibrary,
+  });
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<CatalogProvider>().loadRecommendations();
+    });
+  }
+
+  void _openProfile() {
+    if (widget.onOpenProfile != null) {
+      widget.onOpenProfile!();
+      return;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute<void>(
+        builder: (context) => const ProfileScreen(),
+      ),
+    );
+  }
+
+  void _openLibrary(String status) {
+    if (widget.onOpenLibrary != null) {
+      widget.onOpenLibrary!(status);
+      return;
+    }
+
+    context.read<ReadingProvider>().setStatusFilter(status);
+
+    Navigator.push(
+      context,
+      MaterialPageRoute<void>(
+        builder: (context) => const LibraryScreen(),
+      ),
+    );
+  }
+
+  void _openBookDetail(Book book) {
+    Navigator.push(
+      context,
+      MaterialPageRoute<void>(
+        builder: (context) => BookDetailScreen(book: book),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.cream,
       appBar: AppBar(
         title: Row(
           children: [
@@ -35,30 +107,32 @@ class HomeScreen extends StatelessWidget {
             ),
           ],
         ),
-        actions: const [
+        actions: [
           Padding(
-            padding: EdgeInsets.only(right: 18),
-            child: CircleAvatar(
-              radius: 18,
-              backgroundColor: AppColors.mint,
-              child: Icon(
-                Icons.person_outline_rounded,
-                color: AppColors.forest,
-                size: 21,
+            padding: const EdgeInsets.only(right: 18),
+            child: Material(
+              color: AppColors.mint,
+              shape: const CircleBorder(),
+              child: IconButton(
+                tooltip: 'Profil Saya',
+                onPressed: _openProfile,
+                icon: const Icon(
+                  Icons.person_outline_rounded,
+                  color: AppColors.forest,
+                  size: 22,
+                ),
               ),
             ),
           ),
         ],
       ),
-
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
-            final bool isWide = constraints.maxWidth >= 800;
-
-            final double horizontalPadding = isWide ? 32 : 20;
-
-            final int gridColumns = constraints.maxWidth >= 1100 ? 4 : 3;
+            final isWide = constraints.maxWidth >= 800;
+            final horizontalPadding = isWide ? 32.0 : 20.0;
+            final gridColumns =
+                constraints.maxWidth >= 1100 ? 4 : 3;
 
             return SingleChildScrollView(
               padding: EdgeInsets.fromLTRB(
@@ -73,7 +147,6 @@ class HomeScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // INTRODUCTION
                       const Text(
                         'PERSONAL READING SPACE',
                         style: TextStyle(
@@ -83,46 +156,42 @@ class HomeScreen extends StatelessWidget {
                           letterSpacing: 1.5,
                         ),
                       ),
-
                       const SizedBox(height: 8),
-
                       Text(
                         'Halo, pembaca!',
                         style: Theme.of(context).textTheme.headlineLarge,
                       ),
-
                       const SizedBox(height: 5),
-
                       Text(
                         'Temukan cerita dan pengetahuan baru hari ini.',
                         style: Theme.of(context).textTheme.bodyMedium,
                       ),
-
                       const SizedBox(height: 22),
-
-                      // RESPONSIVE HERO AND STATISTICS
-                      if (isWide) ...[
+                      if (isWide)
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Expanded(flex: 3, child: _HeroBanner()),
-                            const SizedBox(width: 20),
                             const Expanded(
+                              flex: 3,
+                              child: _HeroBanner(),
+                            ),
+                            const SizedBox(width: 20),
+                            Expanded(
                               flex: 2,
-                              child: _StatisticsSection(),
+                              child: _StatisticsSection(
+                                onOpenLibrary: _openLibrary,
+                              ),
                             ),
                           ],
-                        ),
-                      ] else ...[
+                        )
+                      else ...[
                         const _HeroBanner(),
                         const SizedBox(height: 25),
-                        const _StatisticsSection(),
+                        _StatisticsSection(
+                          onOpenLibrary: _openLibrary,
+                        ),
                       ],
-
                       const SizedBox(height: 27),
-
-                      // RECOMMENDATION TITLE
-                      // FIX: Expanded mencegah overflow.
                       Row(
                         children: [
                           Expanded(
@@ -133,42 +202,50 @@ class HomeScreen extends StatelessWidget {
                               style: Theme.of(context).textTheme.titleLarge,
                             ),
                           ),
-
                           const SizedBox(width: 8),
-
-                          const Text(
-                            'Jelajahi',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: AppColors.forest,
-                              fontWeight: FontWeight.w700,
+                          TextButton(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute<void>(
+                                  builder: (context) =>
+                                      const LibraryScreen(),
+                                ),
+                              );
+                            },
+                            style: TextButton.styleFrom(
+                              foregroundColor: AppColors.forest,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                              ),
+                            ),
+                            child: const Text(
+                              'Rak Saya',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
                           ),
                         ],
                       ),
-
                       const SizedBox(height: 5),
-
                       const Text(
                         'Temukan bacaan untuk menemani harimu.',
-                        style: TextStyle(color: AppColors.muted, fontSize: 12),
+                        style: TextStyle(
+                          color: AppColors.muted,
+                          fontSize: 12,
+                        ),
                       ),
-
                       const SizedBox(height: 15),
-
-                      // COMPACT: HORIZONTAL LIST
-                      // WIDE: RESPONSIVE GRID
-                      if (isWide)
-                        _WideRecommendationGrid(columns: gridColumns)
-                      else
-                        const _CompactRecommendationList(),
-
+                      _RecommendationsSection(
+                        isWide: isWide,
+                        columns: gridColumns,
+                        onBookTap: _openBookDetail,
+                      ),
                       const SizedBox(height: 26),
-
-                      const _ReadingTarget(),
-
+                      const _ReadingProgress(),
                       const SizedBox(height: 22),
-
                       const Center(
                         child: Text(
                           'READ MORE. GROW MORE.',
@@ -192,10 +269,6 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
-// ======================================
-// HERO BANNER
-// ======================================
-
 class _HeroBanner extends StatelessWidget {
   const _HeroBanner();
 
@@ -203,452 +276,501 @@ class _HeroBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(23),
         gradient: const LinearGradient(
-          colors: [AppColors.forestDark, AppColors.forest, Color(0xFF52785C)],
+          colors: [
+            AppColors.forestDark,
+            AppColors.forest,
+            Color(0xFF66866A),
+          ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
       ),
-      child: Row(
+      child: Stack(
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                  child: const Text(
-                    'WELCOME TO READIFY',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 9,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1,
+          Positioned(
+            right: -15,
+            top: -25,
+            child: Container(
+              width: 125,
+              height: 125,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.07),
+              ),
+            ),
+          ),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE5B17C),
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                      child: const Text(
+                        'YOUR READING SPACE',
+                        style: TextStyle(
+                          color: Color(0xFF443221),
+                          fontSize: 9,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.8,
+                        ),
+                      ),
                     ),
+                    const SizedBox(height: 17),
+                    const Text(
+                      'Satu halaman,\nbanyak dunia.',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 25,
+                        fontWeight: FontWeight.w900,
+                        height: 1.15,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      'Luangkan waktu, temukan cerita baru, dan nikmati perjalanan membaca.',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.85),
+                        fontSize: 11,
+                        height: 1.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              const Icon(
+                Icons.auto_stories_rounded,
+                color: Color(0xBFFFFFFF),
+                size: 72,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StatisticsSection extends StatelessWidget {
+  final ValueChanged<String> onOpenLibrary;
+
+  const _StatisticsSection({
+    required this.onOpenLibrary,
+  });
+
+  String _formatValue(ReadingProvider provider, int value) {
+    if (provider.items.isEmpty && provider.isLoading) {
+      return '...';
+    }
+
+    if (provider.items.isEmpty && provider.error != null) {
+      return '—';
+    }
+
+    return value.toString();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<ReadingProvider>(
+      builder: (context, provider, child) {
+        String description;
+
+        if (provider.items.isEmpty && provider.isLoading) {
+          description = 'Sedang memuat koleksi bacaan.';
+        } else if (provider.items.isEmpty && provider.error != null) {
+          description = 'Statistik belum dapat dimuat.';
+        } else {
+          description = 'Ketuk ringkasan untuk melihat koleksimu.';
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Ringkasan bacaan',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 5),
+            Text(
+              description,
+              style: const TextStyle(
+                fontSize: 10,
+                color: AppColors.muted,
+              ),
+            ),
+            const SizedBox(height: 13),
+            Row(
+              children: [
+                Expanded(
+                  child: _StatisticCard(
+                    icon: Icons.library_books_rounded,
+                    value: _formatValue(provider, provider.totalBooks),
+                    label: 'Total buku',
+                    backgroundColor: const Color(0xFFE3EEE3),
+                    iconColor: AppColors.forest,
+                    onTap: () => onOpenLibrary('all'),
                   ),
                 ),
-
-                const SizedBox(height: 15),
-
-                const Text(
-                  'Satu halaman,\nbanyak dunia.',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.w800,
-                    height: 1.15,
+                const SizedBox(width: 9),
+                Expanded(
+                  child: _StatisticCard(
+                    icon: Icons.menu_book_rounded,
+                    value: _formatValue(provider, provider.readingCount),
+                    label: 'Dibaca',
+                    backgroundColor: const Color(0xFFFFE9D8),
+                    iconColor: const Color(0xFFAC682F),
+                    onTap: () => onOpenLibrary('reading'),
                   ),
                 ),
-
-                const SizedBox(height: 9),
-
-                Text(
-                  'Mulai perjalanan membaca dan kumpulkan buku favoritmu.',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.8),
-                    fontSize: 11,
-                    height: 1.5,
+                const SizedBox(width: 9),
+                Expanded(
+                  child: _StatisticCard(
+                    icon: Icons.check_circle_rounded,
+                    value: _formatValue(provider, provider.finishedCount),
+                    label: 'Selesai',
+                    backgroundColor: const Color(0xFFEAE7F3),
+                    iconColor: const Color(0xFF6C5B91),
+                    onTap: () => onOpenLibrary('finished'),
                   ),
                 ),
               ],
             ),
-          ),
-
-          const SizedBox(width: 8),
-
-          const Icon(
-            Icons.auto_stories_rounded,
-            color: Color(0xAAFFFFFF),
-            size: 75,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ======================================
-// STATISTICS SECTION
-// ======================================
-
-class _StatisticsSection extends StatelessWidget {
-  const _StatisticsSection();
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Ringkasan bacaan', style: Theme.of(context).textTheme.titleLarge),
-
-        const SizedBox(height: 5),
-
-        const Text(
-          'Contoh data koleksi',
-          style: TextStyle(fontSize: 10, color: AppColors.muted),
-        ),
-
-        const SizedBox(height: 13),
-
-        const Row(
-          children: [
-            Expanded(
-              child: _StatisticCard(
-                icon: Icons.library_books_rounded,
-                value: '12',
-                label: 'Total buku',
+            if (provider.error != null && provider.items.isEmpty) ...[
+              const SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: provider.loadItems,
+                  icon: const Icon(Icons.refresh_rounded, size: 16),
+                  label: const Text('Coba muat ulang'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.forest,
+                  ),
+                ),
               ),
-            ),
-            SizedBox(width: 9),
-            Expanded(
-              child: _StatisticCard(
-                icon: Icons.menu_book_rounded,
-                value: '03',
-                label: 'Dibaca',
-              ),
-            ),
-            SizedBox(width: 9),
-            Expanded(
-              child: _StatisticCard(
-                icon: Icons.check_circle_rounded,
-                value: '08',
-                label: 'Selesai',
-              ),
-            ),
+            ],
           ],
-        ),
-      ],
-    );
-  }
-}
-
-// ======================================
-// STATISTIC CARD
-// ======================================
-
-class _StatisticCard extends StatelessWidget {
-  const _StatisticCard({
-    required this.icon,
-    required this.value,
-    required this.label,
-  });
-
-  final IconData icon;
-  final String value;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 8),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(17),
-        border: Border.all(color: AppColors.line),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: AppColors.leaf, size: 19),
-          const SizedBox(height: 9),
-          Text(
-            value,
-            style: const TextStyle(
-              color: AppColors.ink,
-              fontSize: 21,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-          const SizedBox(height: 3),
-          Text(
-            label,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(color: AppColors.muted, fontSize: 10),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ======================================
-// COMPACT RECOMMENDATION LIST
-// ======================================
-
-class _CompactRecommendationList extends StatelessWidget {
-  const _CompactRecommendationList();
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 235,
-      child: ListView.separated(
-        key: const ValueKey('compact-recommendations'),
-        scrollDirection: Axis.horizontal,
-        itemCount: _sampleBooks.length,
-
-        separatorBuilder: (BuildContext context, int index) {
-          return const SizedBox(width: 13);
-        },
-
-        itemBuilder: (context, index) {
-          return _BookCard(book: _sampleBooks[index], width: 145);
-        },
-      ),
-    );
-  }
-}
-
-// ======================================
-// WIDE RESPONSIVE RECOMMENDATION GRID
-// ======================================
-
-class _WideRecommendationGrid extends StatelessWidget {
-  const _WideRecommendationGrid({required this.columns});
-
-  final int columns;
-
-  @override
-  Widget build(BuildContext context) {
-    return GridView.builder(
-      key: const ValueKey('wide-recommendations'),
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: columns,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
-        childAspectRatio: 0.82,
-      ),
-      itemCount: _sampleBooks.length,
-      itemBuilder: (context, index) {
-        return _BookCard(book: _sampleBooks[index], width: double.infinity);
+        );
       },
     );
   }
 }
 
-// ======================================
-// BOOK DATA
-// ======================================
-
-class _BookData {
-  const _BookData({
-    required this.title,
-    required this.author,
-    required this.tag,
-    required this.colors,
-    required this.icon,
-  });
-
-  final String title;
-  final String author;
-  final String tag;
-  final List<Color> colors;
+class _StatisticCard extends StatelessWidget {
   final IconData icon;
-}
+  final String value;
+  final String label;
+  final Color backgroundColor;
+  final Color iconColor;
+  final VoidCallback onTap;
 
-const List<_BookData> _sampleBooks = [
-  _BookData(
-    title: 'Atomic Habits',
-    author: 'James Clear',
-    tag: 'Self Improvement',
-    colors: [Color(0xFF325B49), Color(0xFF729278)],
-    icon: Icons.spa_rounded,
-  ),
-  _BookData(
-    title: 'Filosofi Teras',
-    author: 'Henry Manampiring',
-    tag: 'Filosofi',
-    colors: [Color(0xFFB56D45), Color(0xFFE8AE77)],
-    icon: Icons.wb_sunny_rounded,
-  ),
-  _BookData(
-    title: 'The Psychology of Money',
-    author: 'Morgan Housel',
-    tag: 'Keuangan',
-    colors: [Color(0xFF46516D), Color(0xFF8792B2)],
-    icon: Icons.account_balance_wallet_rounded,
-  ),
-  _BookData(
-    title: 'Deep Work',
-    author: 'Cal Newport',
-    tag: 'Produktivitas',
-    colors: [Color(0xFF69513F), Color(0xFFB18C6B)],
-    icon: Icons.psychology_rounded,
-  ),
-];
-
-// ======================================
-// BOOK CARD
-// ======================================
-
-class _BookCard extends StatelessWidget {
-  const _BookCard({required this.book, required this.width});
-
-  final _BookData book;
-  final double width;
+  const _StatisticCard({
+    required this.icon,
+    required this.value,
+    required this.label,
+    required this.backgroundColor,
+    required this.iconColor,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: width,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(15),
-                gradient: LinearGradient(
-                  colors: book.colors,
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
+    return Material(
+      color: backgroundColor,
+      borderRadius: BorderRadius.circular(17),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(17),
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            vertical: 13,
+            horizontal: 9,
+          ),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(17),
+            border: Border.all(
+              color: iconColor.withValues(alpha: 0.13),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(icon, color: iconColor, size: 21),
+              const SizedBox(height: 10),
+              Text(
+                value,
+                style: TextStyle(
+                  color: iconColor,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
                 ),
               ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+              const SizedBox(height: 3),
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: AppColors.ink,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 7),
+              Row(
                 children: [
-                  Icon(book.icon, color: Colors.white, size: 40),
-                  const SizedBox(height: 12),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    child: Text(
-                      book.title.toUpperCase(),
-                      textAlign: TextAlign.center,
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 0.5,
-                      ),
+                  Text(
+                    'Lihat',
+                    style: TextStyle(
+                      color: iconColor,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w800,
                     ),
+                  ),
+                  const SizedBox(width: 3),
+                  Icon(
+                    Icons.arrow_forward_rounded,
+                    color: iconColor,
+                    size: 11,
                   ),
                 ],
               ),
-            ),
+            ],
           ),
-          const SizedBox(height: 9),
-          Text(
-            book.title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontSize: 13,
-              color: AppColors.ink,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(height: 3),
-          Text(
-            book.author,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontSize: 11, color: AppColors.muted),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            book.tag,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontSize: 9,
-              color: AppColors.leaf,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
 }
 
-// ======================================
-// READING TARGET
-// ======================================
+class _RecommendationsSection extends StatelessWidget {
+  final bool isWide;
+  final int columns;
+  final ValueChanged<Book> onBookTap;
 
-class _ReadingTarget extends StatelessWidget {
-  const _ReadingTarget();
+  const _RecommendationsSection({
+    required this.isWide,
+    required this.columns,
+    required this.onBookTap,
+  });
+
+  Widget _buildFeedback(CatalogProvider provider) {
+    if (provider.isLoadingRecommendations) {
+      return const FeedbackState(
+        isLoading: true,
+        title: 'Memuat Rekomendasi',
+        message: 'Sedang mengambil buku dari Open Library.',
+      );
+    }
+
+    if (provider.recommendationError != null) {
+      return FeedbackState(
+        icon: Icons.wifi_off_rounded,
+        title: 'Rekomendasi Gagal Dimuat',
+        message: provider.recommendationError!,
+        buttonText: 'Coba Lagi',
+        onPressed: () {
+          provider.loadRecommendations(forceRefresh: true);
+        },
+      );
+    }
+
+    return const FeedbackState(
+      icon: Icons.menu_book_outlined,
+      title: 'Rekomendasi Belum Tersedia',
+      message: 'Belum ada buku dengan sampul yang dapat ditampilkan.',
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(17),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFF0E4),
-        borderRadius: BorderRadius.circular(19),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Row(
-            children: [
-              Icon(Icons.flag_rounded, color: AppColors.orange, size: 21),
-              SizedBox(width: 9),
-              Text(
-                'Target membaca',
-                style: TextStyle(
-                  color: AppColors.ink,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 14,
+    return Consumer<CatalogProvider>(
+      builder: (context, provider, child) {
+        final books = provider.recommendations.take(12).toList();
+        final hasBooks = books.isNotEmpty;
+
+        if (isWide) {
+          return GridView.builder(
+            key: const ValueKey('wide-recommendations'),
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: columns,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              mainAxisExtent: hasBooks ? 132 : 210,
+            ),
+            itemCount: hasBooks ? books.length : 1,
+            itemBuilder: (context, index) {
+              if (!hasBooks) {
+                return _buildFeedback(provider);
+              }
+
+              final book = books[index];
+
+              return BookCard(
+                book: book,
+                onTap: () => onBookTap(book),
+              );
+            },
+          );
+        }
+
+        return SizedBox(
+          height: 235,
+          child: ListView.separated(
+            key: const ValueKey('compact-recommendations'),
+            scrollDirection: Axis.horizontal,
+            itemCount: hasBooks ? books.length : 1,
+            separatorBuilder: (context, index) =>
+                const SizedBox(width: 12),
+            itemBuilder: (context, index) {
+              if (!hasBooks) {
+                return SizedBox(
+                  width: 300,
+                  child: _buildFeedback(provider),
+                );
+              }
+
+              final book = books[index];
+
+              return SizedBox(
+                width: 260,
+                child: BookCard(
+                  book: book,
+                  onTap: () => onBookTap(book),
                 ),
-              ),
-            ],
+              );
+            },
           ),
-          const SizedBox(height: 13),
-          const Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                '8 dari 12 buku',
-                style: TextStyle(
-                  color: AppColors.ink,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              Text(
-                '67%',
-                style: TextStyle(
-                  color: AppColors.orange,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 9),
-          ClipRRect(
+        );
+      },
+    );
+  }
+}
+
+class _ReadingProgress extends StatelessWidget {
+  const _ReadingProgress();
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<ReadingProvider>(
+      builder: (context, provider, child) {
+        final totalBooks = provider.totalBooks;
+        final finishedBooks = provider.finishedCount;
+        final hasError = provider.error != null && totalBooks == 0;
+        final isLoading = provider.isLoading && totalBooks == 0;
+
+        final progress = totalBooks == 0
+            ? 0.0
+            : finishedBooks / totalBooks;
+
+        final percentage = hasError
+            ? '—'
+            : '${(progress * 100).round()}%';
+
+        final description = isLoading
+            ? 'Sedang memuat progres membaca.'
+            : hasError
+                ? 'Progres belum dapat dimuat. Periksa koneksi.'
+                : totalBooks == 0
+                    ? 'Tambahkan buku ke Rak Saya untuk melihat progres membaca.'
+                    : '$finishedBooks dari $totalBooks buku sudah selesai dibaca.';
+
+        return Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFFEBD9),
             borderRadius: BorderRadius.circular(20),
-            child: const LinearProgressIndicator(
-              value: 0.67,
-              minHeight: 9,
-              backgroundColor: Color(0xFFE8D8C8),
-              valueColor: AlwaysStoppedAnimation<Color>(AppColors.orange),
+            border: Border.all(
+              color: const Color(0xFFF2D3B5),
             ),
           ),
-          const SizedBox(height: 9),
-          const Text(
-            'Terus semangat menyelesaikan target bacaanmu!',
-            style: TextStyle(color: AppColors.muted, fontSize: 11),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Row(
+                children: [
+                  Icon(
+                    Icons.auto_graph_rounded,
+                    color: Color(0xFFAD682F),
+                    size: 22,
+                  ),
+                  SizedBox(width: 9),
+                  Text(
+                    'Progres membaca',
+                    style: TextStyle(
+                      color: AppColors.ink,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 13),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      description,
+                      style: const TextStyle(
+                        color: AppColors.ink,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    percentage,
+                    style: const TextStyle(
+                      color: Color(0xFFAD682F),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: LinearProgressIndicator(
+                  value: progress,
+                  minHeight: 10,
+                  backgroundColor: const Color(0xFFE8D4BF),
+                  valueColor: const AlwaysStoppedAnimation<Color>(
+                    Color(0xFFD58A4F),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                'Persentase buku selesai dibaca dari seluruh koleksi.',
+                style: TextStyle(
+                  color: AppColors.muted,
+                  fontSize: 11,
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
